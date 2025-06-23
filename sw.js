@@ -2,7 +2,7 @@ const CACHE_NAME = "solar-system-cache-v1";
 const urlsToCache = [
   "./",
   "./index.html",
-  "./favicon.png",
+  "./favicon.ico",
   "./8k_stars_milky_way.jpg",
   "./splash-loading-screen.png",
   "./manifest.json"
