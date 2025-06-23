@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Galactic Observatory</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <style>
     html, body {
@@ -17,15 +17,11 @@
     }
     canvas {
       display: block;
-      width: 100%;
-      height: 100%;
     }
     #splash-screen {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: black;
       display: flex;
       align-items: center;
@@ -51,13 +47,14 @@ const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color3.Black();
-const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.2, 250, BABYLON.Vector3.Zero(), scene);
+const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.2, 800, BABYLON.Vector3.Zero(), scene);
 camera.attachControl(canvas, true);
 
 const light = new BABYLON.PointLight("SunLight", new BABYLON.Vector3(0, 0, 0), scene);
 light.intensity = 2.5;
 
 const backgroundLayer = new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
+
 const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 18 }, scene);
 const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
 sunMat.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
@@ -72,11 +69,24 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
 
   let angle = Math.random() * Math.PI * 2;
   scene.registerBeforeRender(() => {
-    angle += speed;
+    angle += speed * timeFactor;
     planet.position.x = Math.cos(angle) * dist;
     planet.position.z = Math.sin(angle) * dist;
   });
 
+  // Label
+  const labelPlane = BABYLON.MeshBuilder.CreatePlane(name + "_label", { size: 10 }, scene);
+  labelPlane.parent = planet;
+  labelPlane.position.y = size + 2;
+
+  const labelTex = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(labelPlane);
+  const textBlock = new BABYLON.GUI.TextBlock();
+  textBlock.text = name;
+  textBlock.color = "white";
+  textBlock.fontSize = 24;
+  labelTex.addControl(textBlock);
+
+  // Moons
   moons.forEach((moon, i) => {
     const m = BABYLON.MeshBuilder.CreateSphere(`${name}_moon_${i}`, { diameter: moon.size }, scene);
     const moonMat = new BABYLON.StandardMaterial(`${name}_moonmat_${i}`, scene);
@@ -85,7 +95,7 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
 
     let mAngle = Math.random() * Math.PI * 2;
     scene.registerBeforeRender(() => {
-      mAngle += moon.speed;
+      mAngle += moon.speed * timeFactor;
       m.position.x = planet.position.x + Math.cos(mAngle) * moon.distance;
       m.position.z = planet.position.z + Math.sin(mAngle) * moon.distance;
     });
@@ -93,69 +103,67 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
 
   return planet;
 }
+let timeFactor = 1;
+
 const planets = [
+  { name: "Mercury", size: 1, dist: 58, speed: 0.0026, color: new BABYLON.Color3(0.8, 0.7, 0.5) },
+  { name: "Venus", size: 2, dist: 108, speed: 0.00162, color: new BABYLON.Color3(1.0, 0.9, 0.6) },
   {
-    name: "Earth", size: 3, dist: 50, speed: 0.01,
-    color: new BABYLON.Color3(0.3, 0.6, 1),
-    moons: [{ size: 1, distance: 4, speed: 0.05, color: BABYLON.Color3.White() }]
+    name: "Earth", size: 3, dist: 149.6, speed: 0.001, color: new BABYLON.Color3(0.3, 0.6, 1),
+    moons: [{ size: 1, distance: 5, speed: 0.05, color: BABYLON.Color3.White() }]
   },
-  {
-    name: "Mars", size: 2, dist: 65, speed: 0.008,
-    color: new BABYLON.Color3(0.8, 0.4, 0.3), moons: []
-  },
-  {
-    name: "Jupiter", size: 6, dist: 90, speed: 0.006,
-    color: new BABYLON.Color3(0.9, 0.8, 0.6), moons: []
-  },
-  {
-    name: "Saturn", size: 5.5, dist: 115, speed: 0.004,
-    color: new BABYLON.Color3(1, 0.9, 0.5), moons: []
-  }
+  { name: "Mars", size: 2, dist: 228, speed: 0.00053, color: new BABYLON.Color3(0.8, 0.4, 0.3) },
+  { name: "Jupiter", size: 6, dist: 778, speed: 0.000084, color: new BABYLON.Color3(0.9, 0.8, 0.6) },
+  { name: "Saturn", size: 5.5, dist: 1430, speed: 0.000034, color: new BABYLON.Color3(1.0, 0.9, 0.5) },
+  { name: "Uranus", size: 4.5, dist: 2870, speed: 0.000012, color: new BABYLON.Color3(0.6, 0.9, 1) },
+  { name: "Neptune", size: 4.5, dist: 4495, speed: 0.000006, color: new BABYLON.Color3(0.3, 0.5, 1) }
 ];
 
 planets.forEach(p => {
-  createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons);
-  const points = [];
+  createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons || []);
+  const pts = [];
   for (let i = 0; i <= 360; i++) {
-    let angle = BABYLON.Tools.ToRadians(i);
-    points.push(new BABYLON.Vector3(Math.cos(angle) * p.dist, 0, Math.sin(angle) * p.dist));
+    let a = BABYLON.Tools.ToRadians(i);
+    pts.push(new BABYLON.Vector3(Math.cos(a) * p.dist, 0, Math.sin(a) * p.dist));
   }
-  const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points }, scene);
+  const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points: pts }, scene);
   orbit.color = BABYLON.Color3.White();
   orbit.alpha = 0.05;
 });
-[
-  { name: "Sirius", color: new BABYLON.Color3(0.6, 0.8, 1.0), pos: new BABYLON.Vector3(-300, 100, 200) },
-  { name: "Betelgeuse", color: new BABYLON.Color3(1.0, 0.6, 0.2), pos: new BABYLON.Vector3(400, 90, -250) }
-].forEach(star => {
-  const mesh = BABYLON.MeshBuilder.CreateSphere(star.name, { diameter: 3 }, scene);
-  mesh.position = star.pos;
-  const mat = new BABYLON.StandardMaterial(`${star.name}_mat`, scene);
-  mat.emissiveColor = star.color;
-  mesh.material = mat;
-});
+const orionStars = [
+  new BABYLON.Vector3(-80, 40, 60),
+  new BABYLON.Vector3(-70, 42, 55),
+  new BABYLON.Vector3(-60, 41, 50)
+];
+const orionLines = BABYLON.MeshBuilder.CreateLines("Orion", { points: orionStars }, scene);
+orionLines.color = new BABYLON.Color3(0.5, 0.8, 1.0);
+orionLines.alpha = 0.6;
 let gridLines;
 (function createGrid() {
-  const size = 300, step = 30, lines = [];
+  const size = 5000, step = 250, lines = [];
   for (let i = -size; i <= size; i += step) {
     lines.push([new BABYLON.Vector3(i, 0, -size), new BABYLON.Vector3(i, 0, size)]);
     lines.push([new BABYLON.Vector3(-size, 0, i), new BABYLON.Vector3(size, 0, i)]);
   }
   gridLines = BABYLON.MeshBuilder.CreateLineSystem("grid", { lines }, scene);
   gridLines.color = new BABYLON.Color3(1, 1, 1);
-  gridLines.alpha = 0.02;
-  gridLines.isVisible = false;
+ gridLines.isVisible = false;
 })();
+
+// BABYLON GUI panel
 const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
 const panel = new BABYLON.GUI.Rectangle();
-panel.width = "250px";
-panel.background = window.matchMedia("(prefers-color-scheme: dark)").matches ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.8)";
-panel.cornerRadius = 12;
+panel.width = "240px";
+panel.background = window.matchMedia("(prefers-color-scheme: dark)").matches
+  ? "rgba(20,20,20,0.8)"
+  : "rgba(255,255,255,0.8)";
+panel.cornerRadius = 10;
 panel.thickness = 0;
-panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
 panel.paddingTop = "10px";
 panel.paddingLeft = "10px";
+panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
 gui.addControl(panel);
 
 const stack = new BABYLON.GUI.StackPanel();
@@ -163,44 +171,50 @@ stack.width = "100%";
 panel.addControl(stack);
 
 function addButton(label, callback) {
-  const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
-  btn.height = "28px";
-   const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  btn.color = isDark ? "lime" : "black";
-  btn.background = "transparent";
-  btn.paddingBottom = "4px";
-  btn.onPointerClickObservable.add(callback);
-  stack.addControl(btn);
-  return btn;
+  const button = BABYLON.GUI.Button.CreateSimpleButton(label, label);
+  button.height = "28px";
+  button.color = window.matchMedia("(prefers-color-scheme: dark)").matches ? "lime" : "black";
+  button.background = "transparent";
+  button.paddingBottom = "4px";
+  button.onPointerClickObservable.add(callback);
+  stack.addControl(button);
+  return button;
 }
 
-// Toggle Grid Visibility
+// Grid toggle
 let gridShown = false;
-const gridBtn = addButton("Show Grid", () => {
+addButton("Toggle Grid", () => {
   gridShown = !gridShown;
-  if (gridLines) gridLines.isVisible = gridShown;
-  gridBtn.textBlock.text = gridShown ? "Hide Grid" : "Show Grid";
+  gridLines.isVisible = gridShown;
 });
 
-// Toggle Performance Mode
+// Performance toggle
 let perfMode = false;
 addButton("Toggle Performance Mode", () => {
   perfMode = !perfMode;
   glowLayer.isEnabled = !perfMode;
   backgroundLayer.isEnabled = !perfMode;
 });
-let timeFactor = 1;
 
+// Constellation toggle
+let constellationsShown = true;
+addButton("Toggle Constellations", () => {
+  constellationsShown = !constellationsShown;
+  orionLines.setEnabled(constellationsShown);
+});
+
+// Time warp controls
 [
-  { label: "1x", factor: 1 },
-  { label: "10x", factor: 10 },
-  { label: "100x", factor: 100 },
-  { label: "Pause", factor: 0 }
-].forEach(speed => {
-  addButton(`Time: ${speed.label}`, () => {
-    timeFactor = speed.factor;
+  { label: "1x", value: 1 },
+  { label: "10x", value: 10 },
+  { label: "100x", value: 100 },
+  { label: "Pause", value: 0 }
+].forEach(opt => {
+  addButton(`Time: ${opt.label}`, () => {
+    timeFactor = opt.value;
   });
 });
+// Splash screen fade out
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     const splash = document.getElementById("splash-screen");
@@ -211,10 +225,13 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 });
+
+// Babylon render loop
 engine.runRenderLoop(() => {
   scene.render();
 });
 
+// Resize handler
 window.addEventListener("resize", () => {
   engine.resize();
 });
