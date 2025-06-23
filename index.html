@@ -42,19 +42,16 @@
   <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
 </head>
 <body>
-  <!-- 🌌 Splash Screen -->
   <div id="splash-screen">
     <img src="splash-loading-screen.png" alt="Loading Galactic Observatory..." />
   </div>
-
-  <!-- 🪐 Babylon Canvas -->
   <canvas id="renderCanvas"></canvas>
 <script>
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color3.Black();
-const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.2, 250, BABYLON.Vector3.Zero(), scene);
+const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.2, 250, BABYLON.Vector3.Zero(), scene);
 camera.attachControl(canvas, true);
 
 const light = new BABYLON.PointLight("SunLight", new BABYLON.Vector3(0, 0, 0), scene);
@@ -67,7 +64,6 @@ sunMat.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
 sun.material = sunMat;
 
 const glowLayer = new BABYLON.GlowLayer("glow", scene);
-// Helper to create planets with optional moons
 function createPlanet(name, size, dist, speed, color, moons = []) {
   const planet = BABYLON.MeshBuilder.CreateSphere(name, { diameter: size }, scene);
   const mat = new BABYLON.StandardMaterial(name + "_mat", scene);
@@ -98,29 +94,39 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
   return planet;
 }
 const planets = [
-  { name: "Earth", size: 3, dist: 50, speed: 0.01, color: new BABYLON.Color3(0.3, 0.6, 1), moons: [
-    { size: 1, distance: 4, speed: 0.05, color: new BABYLON.Color3.White() }
-  ]},
-  { name: "Mars", size: 2, dist: 65, speed: 0.008, color: new BABYLON.Color3(0.8, 0.4, 0.3), moons: [] },
-  { name: "Jupiter", size: 6, dist: 90, speed: 0.006, color: new BABYLON.Color3(0.9, 0.8, 0.6), moons: [] },
-  { name: "Saturn", size: 5.5, dist: 115, speed: 0.004, color: new BABYLON.Color3(1, 0.9, 0.5), moons: [] }
+  {
+    name: "Earth", size: 3, dist: 50, speed: 0.01,
+    color: new BABYLON.Color3(0.3, 0.6, 1),
+    moons: [{ size: 1, distance: 4, speed: 0.05, color: BABYLON.Color3.White() }]
+  },
+  {
+    name: "Mars", size: 2, dist: 65, speed: 0.008,
+    color: new BABYLON.Color3(0.8, 0.4, 0.3), moons: []
+  },
+  {
+    name: "Jupiter", size: 6, dist: 90, speed: 0.006,
+    color: new BABYLON.Color3(0.9, 0.8, 0.6), moons: []
+  },
+  {
+    name: "Saturn", size: 5.5, dist: 115, speed: 0.004,
+    color: new BABYLON.Color3(1, 0.9, 0.5), moons: []
+  }
 ];
 
 planets.forEach(p => {
   createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons);
-
   const points = [];
   for (let i = 0; i <= 360; i++) {
     let angle = BABYLON.Tools.ToRadians(i);
     points.push(new BABYLON.Vector3(Math.cos(angle) * p.dist, 0, Math.sin(angle) * p.dist));
   }
   const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points }, scene);
-  orbit.color = new BABYLON.Color3.White();
+  orbit.color = BABYLON.Color3.White();
   orbit.alpha = 0.05;
 });
 [
-  { name: "Sirius", color: new BABYLON.Color3(0.6,0.8,1.0), pos: new BABYLON.Vector3(-300, 100, 200) },
-  { name: "Betelgeuse", color: new BABYLON.Color3(1.0,0.6,0.2), pos: new BABYLON.Vector3(400, 90, -250) }
+  { name: "Sirius", color: new BABYLON.Color3(0.6, 0.8, 1.0), pos: new BABYLON.Vector3(-300, 100, 200) },
+  { name: "Betelgeuse", color: new BABYLON.Color3(1.0, 0.6, 0.2), pos: new BABYLON.Vector3(400, 90, -250) }
 ].forEach(star => {
   const mesh = BABYLON.MeshBuilder.CreateSphere(star.name, { diameter: 3 }, scene);
   mesh.position = star.pos;
@@ -132,8 +138,8 @@ let gridLines;
 (function createGrid() {
   const size = 300, step = 30, lines = [];
   for (let i = -size; i <= size; i += step) {
-    lines.push([ new BABYLON.Vector3(i, 0, -size), new BABYLON.Vector3(i, 0, size) ]);
-    lines.push([ new BABYLON.Vector3(-size, 0, i), new BABYLON.Vector3(size, 0, i) ]);
+    lines.push([new BABYLON.Vector3(i, 0, -size), new BABYLON.Vector3(i, 0, size)]);
+    lines.push([new BABYLON.Vector3(-size, 0, i), new BABYLON.Vector3(size, 0, i)]);
   }
   gridLines = BABYLON.MeshBuilder.CreateLineSystem("grid", { lines }, scene);
   gridLines.color = new BABYLON.Color3(1, 1, 1);
@@ -141,7 +147,6 @@ let gridLines;
   gridLines.isVisible = false;
 })();
 const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
 const panel = new BABYLON.GUI.Rectangle();
 panel.width = "250px";
 panel.background = window.matchMedia("(prefers-color-scheme: dark)").matches ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.8)";
@@ -160,7 +165,8 @@ panel.addControl(stack);
 function addButton(label, callback) {
   const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
   btn.height = "28px";
-  btn.color = "black";
+   const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  btn.color = isDark ? "lime" : "black";
   btn.background = "transparent";
   btn.paddingBottom = "4px";
   btn.onPointerClickObservable.add(callback);
@@ -168,7 +174,7 @@ function addButton(label, callback) {
   return btn;
 }
 
-// 🌌 Toggle Grid
+// Toggle Grid Visibility
 let gridShown = false;
 const gridBtn = addButton("Show Grid", () => {
   gridShown = !gridShown;
@@ -176,7 +182,7 @@ const gridBtn = addButton("Show Grid", () => {
   gridBtn.textBlock.text = gridShown ? "Hide Grid" : "Show Grid";
 });
 
-// 🧮 Toggle Performance Mode
+// Toggle Performance Mode
 let perfMode = false;
 addButton("Toggle Performance Mode", () => {
   perfMode = !perfMode;
@@ -185,26 +191,15 @@ addButton("Toggle Performance Mode", () => {
 });
 let timeFactor = 1;
 
-const speeds = [
+[
   { label: "1x", factor: 1 },
   { label: "10x", factor: 10 },
   { label: "100x", factor: 100 },
   { label: "Pause", factor: 0 }
-];
-
-speeds.forEach(speed => {
+].forEach(speed => {
   addButton(`Time: ${speed.label}`, () => {
     timeFactor = speed.factor;
   });
-});
-window.addEventListener("keydown", e => {
-  if (e.key.toLowerCase() === "f") {
-    if (!document.fullscreenElement) {
-      canvas.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  }
 });
 window.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
@@ -216,8 +211,13 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 });
-engine.runRenderLoop(() => scene.render());
-window.addEventListener("resize", () => engine.resize());
+engine.runRenderLoop(() => {
+  scene.render();
+});
+
+window.addEventListener("resize", () => {
+  engine.resize();
+});
 </script>
 </body>
 </html>
