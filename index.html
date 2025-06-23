@@ -5,7 +5,8 @@
   <title>Galactic Observatory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="favicon.png" />
+<link rel="icon" href="favicon.ico" />
+<meta name="theme-color" content="#000000" />
   <style>
     html, body {
       margin: 0;
@@ -338,6 +339,12 @@ function showPlanetInfo(name) {
       scene.beginAnimation(camera, 0, 15, false);
     }
   }
+}
+  if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(
+    () => console.log("✅ Service Worker registered"),
+    (err) => console.error("🛑 Service Worker registration failed:", err)
+  );
 }
 </script>
 </body>
