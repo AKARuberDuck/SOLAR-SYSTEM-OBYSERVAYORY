@@ -10,13 +10,15 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: black;
       height: 100%;
       width: 100%;
+      background: black;
       font-family: 'Segoe UI', sans-serif;
     }
     canvas {
       display: block;
+      width: 100%;
+      height: 100%;
     }
     #splash-screen {
       position: fixed;
@@ -46,10 +48,11 @@
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 const scene = new BABYLON.Scene(engine);
-scene.clearColor = new BABYLON.Color3.Black();
+scene.clearColor = BABYLON.Color3.Black();
 
-const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.2, 2500, BABYLON.Vector3.Zero(), scene);
+const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.2, 2500, BABYLON.Vector3.Zero(), scene);
 camera.attachControl(canvas, true);
+camera.lowerRadiusLimit = 20;
 
 const light = new BABYLON.PointLight("sunLight", new BABYLON.Vector3(0, 0, 0), scene);
 light.intensity = 2.5;
@@ -78,18 +81,19 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
   const label = BABYLON.MeshBuilder.CreatePlane(name + "_label", { size: 8 }, scene);
   label.parent = planet;
   label.position.y = size + 2;
-  const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(label);
+  const labelTex = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(label);
   const text = new BABYLON.GUI.TextBlock();
   text.text = name;
   text.color = "white";
   text.fontSize = 24;
-  gui.addControl(text);
+  labelTex.addControl(text);
 
   moons.forEach((moon, i) => {
     const m = BABYLON.MeshBuilder.CreateSphere(`${name}_moon_${i}`, { diameter: moon.size }, scene);
-    const mMat = new BABYLON.StandardMaterial(`${name}_moonMat_${i}`, scene);
-    mMat.diffuseColor = moon.color;
-    m.material = mMat;
+    const moonMat = new BABYLON.StandardMaterial(`${name}_moonMat_${i}`, scene);
+    moonMat.diffuseColor = moon.color;
+    m.material = moonMat;
+
     let mAngle = Math.random() * Math.PI * 2;
     scene.registerBeforeRender(() => {
       mAngle += moon.speed * timeFactor;
@@ -98,221 +102,57 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
     });
   });
 
+  planet.actionManager = new BABYLON.ActionManager(scene);
+  planet.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+    BABYLON.ActionManager.OnPickTrigger,
+    () => showPlanetInfo(name)
+  ));
+
   return planet;
 }
-let timeFactor = 1;
-const planets = [
-  {
-    name: "Mercury", size: 1.5, dist: 58, speed: 0.0026,
-    color: new BABYLON.Color3(0.7, 0.7, 0.5), moons: []
-  },
-  {
-    name: "Venus", size: 2, dist: 108, speed: 0.00162,
-    color: new BABYLON.Color3(1.0, 0.9, 0.6), moons: []
-  },
-  {
-    name: "Earth", size: 2.5, dist: 150, speed: 0.001,
-    color: new BABYLON.Color3(0.3, 0.6, 1),
-    moons: [ { size: 0.8, distance: 4, speed: 0.05, color: BABYLON.Color3.White() } ]
-  },
-  {
-    name: "Mars", size: 2, dist: 228, speed: 0.00053,
-    color: new BABYLON.Color3(0.8, 0.4, 0.3),
-    moons: [
-      { size: 0.5, distance: 3, speed: 0.07, color: BABYLON.Color3.Gray() },
-      { size: 0.4, distance: 5, speed: 0.05, color: BABYLON.Color3.Gray() }
-    ]
-  },
-  {
-    name: "Jupiter", size: 6, dist: 778, speed: 0.000084,
-    color: new BABYLON.Color3(0.9, 0.8, 0.6),
-    moons: [
-      { size: 1, distance: 10, speed: 0.02, color: BABYLON.Color3.White() },
-      { size: 0.9, distance: 12, speed: 0.018, color: BABYLON.Color3.White() }
-    ]
-  },
-  {
-    name: "Saturn", size: 5.5, dist: 1430, speed: 0.000034,
-    color: new BABYLON.Color3(1.0, 0.9, 0.5),
-    moons: [
-      { size: 0.9, distance: 9, speed: 0.015, color: BABYLON.Color3.Yellow() }
-    ]
-  },
-  {
-    name: "Uranus", size: 4.5, dist: 2870, speed: 0.000012,
-    color: new BABYLON.Color3(0.6, 0.9, 1), moons: []
-  },
-  {
-    name: "Neptune", size: 4.5, dist: 4500, speed: 0.000006,
-    color: new BABYLON.Color3(0.3, 0.5, 1), moons: []
-  },
-
-  // Dwarf planets
-  {
-    name: "Pluto", size: 1.2, dist: 5900, speed: 0.000004,
-    color: new BABYLON.Color3(0.85, 0.85, 0.95), moons: []
-  },
-  {
-    name: "Eris", size: 1.1, dist: 6700, speed: 0.000002,
-    color: new BABYLON.Color3(0.95, 0.95, 1), moons: []
-  },
-  {
-    name: "Ceres", size: 0.9, dist: 413, speed: 0.0003,
-    color: new BABYLON.Color3(0.8, 0.8, 0.8), moons: []
+const moveKeys = { forward: false, back: false, left: false, right: false };
+scene.onKeyboardObservable.add((kbInfo) => {
+  const pressed = kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN;
+  const key = kbInfo.event.key.toLowerCase();
+  switch (key) {
+    case 'w':
+    case 'arrowup':    moveKeys.forward = pressed; break;
+    case 's':
+    case 'arrowdown':  moveKeys.back = pressed; break;
+    case 'a':
+    case 'arrowleft':  moveKeys.left = pressed; break;
+    case 'd':
+    case 'arrowright': moveKeys.right = pressed; break;
   }
-];
-const orbitLines = [];
+});
 
-planets.forEach(planet => {
-  createPlanet(planet.name, planet.size, planet.dist, planet.speed, planet.color, planet.moons);
-
-  const points = [];
-  for (let i = 0; i <= 360; i++) {
-    let angle = BABYLON.Tools.ToRadians(i);
-    points.push(new BABYLON.Vector3(Math.cos(angle) * planet.dist, 0, Math.sin(angle) * planet.dist));
+window.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+  if (key === "f") {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  } else if (key === "z") {
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.radius = 2500;
+  } else if (key === "x" && camera.radius > camera.lowerRadiusLimit + 10) {
+    camera.radius *= 0.9;
   }
-  const orbit = BABYLON.MeshBuilder.CreateLines(`${planet.name}_orbit`, { points }, scene);
-  orbit.color = BABYLON.Color3.White();
-  orbit.alpha = 0.05;
-  orbitLines.push(orbit);
 });
-for (let i = 0; i < 400; i++) {
-  const beltDist = 500 + Math.random() * 250; // Between Mars and Jupiter
-  const size = 0.3 + Math.random() * 0.5;
-  const theta = Math.random() * Math.PI * 2;
-
-  const asteroid = BABYLON.MeshBuilder.CreateSphere("asteroid" + i, { diameter: size }, scene);
-  const mat = new BABYLON.StandardMaterial("asteroidMat" + i, scene);
-  mat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
-  asteroid.material = mat;
-
-  scene.registerBeforeRender(() => {
-    asteroid.position.x = Math.cos(theta + engine.getDeltaTime() * 0.000005 * i) * beltDist;
-    asteroid.position.z = Math.sin(theta + engine.getDeltaTime() * 0.000005 * i) * beltDist;
-  });
-}
-const constellations = {
-  "Orion": [
-    new BABYLON.Vector3(-80, 40, 60),
-    new BABYLON.Vector3(-70, 42, 55),
-    new BABYLON.Vector3(-60, 41, 50)
-  ],
-  "Ursa Major": [
-    new BABYLON.Vector3(200, 90, -400),
-    new BABYLON.Vector3(220, 92, -390),
-    new BABYLON.Vector3(240, 94, -380),
-    new BABYLON.Vector3(260, 93, -370),
-    new BABYLON.Vector3(280, 91, -360),
-    new BABYLON.Vector3(300, 89, -350),
-    new BABYLON.Vector3(320, 87, -340)
-  ],
-  "Cassiopeia": [
-    new BABYLON.Vector3(-300, 120, 220),
-    new BABYLON.Vector3(-280, 118, 210),
-    new BABYLON.Vector3(-260, 116, 205),
-    new BABYLON.Vector3(-240, 114, 200),
-    new BABYLON.Vector3(-220, 112, 195)
-  ]
-};
-
-const constellationLines = [];
-
-Object.entries(constellations).forEach(([name, stars]) => {
-  stars.forEach((pos, i) => {
-    const star = BABYLON.MeshBuilder.CreateSphere(`${name}_star_${i}`, { diameter: 2 }, scene);
-    star.position = pos;
-    const mat = new BABYLON.StandardMaterial(`${name}_starMat_${i}`, scene);
-    mat.emissiveColor = new BABYLON.Color3(1, 1, 1);
-    star.material = mat;
-
-    if (i < stars.length - 1) {
-      const line = BABYLON.MeshBuilder.CreateLines(`${name}_line_${i}`, {
-        points: [stars[i], stars[i + 1]]
-      }, scene);
-      line.color = new BABYLON.Color3(0.5, 0.8, 1);
-      line.alpha = 0.6;
-      constellationLines.push(line);
-    }
-  });
-});
-const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-const panel = new BABYLON.GUI.Rectangle();
-panel.width = "240px";
-panel.background = window.matchMedia("(prefers-color-scheme: dark)").matches ? "rgba(20,20,20,0.8)" : "rgba(255,255,255,0.8)";
-panel.cornerRadius = 10;
-panel.thickness = 0;
-panel.paddingTop = "10px";
-panel.paddingLeft = "10px";
-panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-gui.addControl(panel);
-
-const stack = new BABYLON.GUI.StackPanel();
-stack.width = "100%";
-panel.addControl(stack);
-
-function addButton(label, callback) {
-  const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
-  btn.height = "28px";
-  btn.color = window.matchMedia("(prefers-color-scheme: dark)").matches ? "lime" : "black";
-  btn.background = "transparent";
-  btn.paddingBottom = "4px";
-  btn.onPointerClickObservable.add(callback);
-  stack.addControl(btn);
-}
-
-// Toggle: Grid
-let gridShown = false;
-addButton("Toggle Grid", () => {
-  gridShown = !gridShown;
-  gridLines.isVisible = gridShown;
-});
-
-// Toggle: Orbits
-let orbitsShown = true;
-addButton("Toggle Orbit Lines", () => {
-  orbitsShown = !orbitsShown;
-  orbitLines.forEach(o => o.setEnabled(orbitsShown));
-});
-
-// Toggle: Constellation Lines
-let constellationsVisible = true;
-addButton("Toggle Constellations", () => {
-  constellationsVisible = !constellationsVisible;
-  constellationLines.forEach(line => line.setEnabled(constellationsVisible));
-});
-
-// Toggle: Performance
-let perfMode = false;
-addButton("Toggle Performance", () => {
-  perfMode = !perfMode;
-  glowLayer.isEnabled = !perfMode;
-  background.isEnabled = !perfMode;
-});
-
-// Time controls
-[
-  { label: "Pause", value: 0 },
-  { label: "1x", value: 1 },
-  { label: "10x", value: 10 },
-  { label: "100x", value: 100 }
-].forEach(opt => {
-  addButton(`Time: ${opt.label}`, () => {
-    timeFactor = opt.value;
-  });
-});
-window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    const splash = document.getElementById("splash-screen");
-    if (splash) {
-      splash.style.transition = "opacity 1s ease";
-      splash.style.opacity = 0;
-      setTimeout(() => splash.remove(), 1000);
-    }
-  }, 1000);
-});
-
 engine.runRenderLoop(() => {
+  const speed = 5;
+  const direction = new BABYLON.Vector3(
+    (moveKeys.right ? 1 : 0) - (moveKeys.left ? 1 : 0),
+    0,
+    (moveKeys.back ? 1 : 0) - (moveKeys.forward ? 1 : 0)
+  );
+  if (!direction.equals(BABYLON.Vector3.Zero())) {
+    const transformed = BABYLON.Vector3.TransformCoordinates(direction, BABYLON.Matrix.RotationY(camera.alpha));
+    camera.target.addInPlace(transformed.scale(speed));
+  }
+
   scene.render();
 });
 
