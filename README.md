@@ -72,4 +72,4 @@ Textures from ```SolarSystemScope``` & ```BabylonJS```
 Design & Development: ```@AKARuberDuck```
 
 # 📃 License
-This project is ```EULA``` but free to explore, and expand. Attribution ```REQUIRED```!
+This project is liscensed under ```MIT``` but you are free to explore, and expand under the terms stated in the MIT. Attribution is ```REQUIRED```!
