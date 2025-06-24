@@ -269,6 +269,13 @@ function showPlanetInfo(name) {
     Ceres: { text: "A dwarf planet in the asteroid belt.", link: "https://solarsystem.nasa.gov/planets/dwarf-planets/ceres/overview/" },
     Eris: { text: "Reflective and distant beyond Pluto.", link: "https://solarsystem.nasa.gov/planets/dwarf-planets/eris/overview/" }
   };
+  if (!data) {
+  planetTitle.text = name;
+  planetFact.text = "No data available.";
+  planetLink.text = "";
+  infoPanel.isVisible = true;
+  return;
+}
 
   const data = facts[name];
   if (data) {
