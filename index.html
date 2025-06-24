@@ -8,24 +8,39 @@
   <link rel="icon" href="favicon.png" />
   <meta name="theme-color" content="#000000" />
   <style>
-    html, body { margin:0; 
-                padding:0; 
-                width:100%; 
-                height:100%; 
-                background:black; 
-                overflow:hidden; 
-                font-family:sans-serif; }
-    canvas { display:block; width:100%; height:100%; }
-    #renderCanvas { position:absolute; top:0; left:0; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      background: black;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #renderCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
     #splash-screen {
-      position:fixed; top:0; left:0; 
-      width:100%; height:100%;
-      background:black; display:flex; 
-      justify-content:center; 
-      align-items:center; z-index:9999;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
     }
     #splash-screen img {
-      max-width:80%; max-height:80%; opacity:0.9;
+      max-width: 80%;
+      max-height: 80%;
+      opacity: 0.9;
     }
   </style>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -33,176 +48,191 @@
 </head>
 <body>
   <div id="splash-screen">
-    <img src="splash-loading-screen.png" alt="Loading..." />
+    <img src="splash-loading-screen.png" alt="Loading Galactic Observatory..." />
   </div>
   <canvas id="renderCanvas"></canvas>
-  <script>
-    const canvas = document.getElementById("renderCanvas");
-    const engine = new BABYLON.Engine(canvas, true);
-    const scene = new BABYLON.Scene(engine);
-    scene.clearColor = BABYLON.Color3.Black();
+<script>
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = BABYLON.Color3.Black();
 
-    const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.2, 2500, BABYLON.Vector3.Zero(), scene);
-    camera.attachControl(canvas, true); camera.lowerRadiusLimit = 20;
+const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2.2, 2500, BABYLON.Vector3.Zero(), scene);
+camera.attachControl(canvas, true);
+camera.lowerRadiusLimit = 20;
 
-    const light = new BABYLON.PointLight("sunLight", new BABYLON.Vector3(0, 0, 0), scene);
-    light.intensity = 2.5;
-    const starfield = new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
-    const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 18 }, scene);
-    const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
-    sunMat.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
-    sun.material = sunMat;
-    const glowLayer = new BABYLON.GlowLayer("glow", scene);
+const light = new BABYLON.PointLight("sunLight", new BABYLON.Vector3(0, 0, 0), scene);
+light.intensity = 2.5;
 
-    let timeFactor = 1, orbitLines = [];
+const starfield = new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
 
-    function createPlanet(name, size, dist, speed, color, moons=[]) {
-      const p = BABYLON.MeshBuilder.CreateSphere(name, { diameter:size }, scene);
-      const mat = new BABYLON.StandardMaterial(name+"_mat", scene);
-      mat.diffuseColor = color; p.material = mat;
-      let angle = Math.random()*Math.PI*2;
-      scene.registerBeforeRender(() => {
-        angle += speed * timeFactor;
-        p.position.x = Math.cos(angle) * dist;
-        p.position.z = Math.sin(angle) * dist;
-      });
+const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 18 }, scene);
+const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
+sunMat.emissiveColor = new BABYLON.Color3(1, 0.85, 0.2);
+sun.material = sunMat;
 
-      const label = BABYLON.MeshBuilder.CreatePlane(name+"_label", { size: 8 }, scene);
-      label.parent = p; label.position.y = size + 2;
-      const guiLabel = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(label);
-      const text = new BABYLON.GUI.TextBlock(); text.text = name; text.color = "white";
-      text.fontSize = 24;
-      guiLabel.addControl(text);
+const glowLayer = new BABYLON.GlowLayer("glow", scene);
+function createPlanet(name, size, dist, speed, color, moons = []) {
+  const planet = BABYLON.MeshBuilder.CreateSphere(name, { diameter: size }, scene);
+  const mat = new BABYLON.StandardMaterial(name + "_mat", scene);
+  mat.diffuseColor = color;
+  planet.material = mat;
 
-      moons.forEach((moon, i) => {
-        const m = BABYLON.MeshBuilder.CreateSphere(`${name}_moon_${i}`, { diameter: moon.size }, scene);
-        const mMat = new BABYLON.StandardMaterial(`${name}_moonMat_${i}`, scene); mMat.diffuseColor = moon.color; m.material = mMat;
-        let mAngle = Math.random()*Math.PI*2;
-        scene.registerBeforeRender(() => {
-          mAngle += moon.speed * timeFactor;
-          m.position.x = p.position.x + Math.cos(mAngle) * moon.distance;
-          m.position.z = p.position.z + Math.sin(mAngle) * moon.distance;
-        });
-      });
+  let angle = Math.random() * Math.PI * 2;
+  scene.registerBeforeRender(() => {
+    angle += speed * timeFactor;
+    planet.position.x = Math.cos(angle) * dist;
+    planet.position.z = Math.sin(angle) * dist;
+  });
 
-      p.actionManager = new BABYLON.ActionManager(scene);
-      p.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
-        showPlanetInfo(name);
-      }));
+  const label = BABYLON.MeshBuilder.CreatePlane(name + "_label", { size: 8 }, scene);
+  label.parent = planet;
+  label.position.y = size + 2;
+  const labelTex = BABYLON.GUI.AdvancedDynamicTexture.CreateForMesh(label);
+  const text = new BABYLON.GUI.TextBlock();
+  text.text = name;
+  text.color = "white";
+  text.fontSize = 24;
+  labelTex.addControl(text);
 
-      return p;
-    }
-
-    const planets = [
-      { name: "Earth", size: 2.5, dist: 150, speed: 0.001, color: new BABYLON.Color3(0.3, 0.6, 1),
-        moons: [{ size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() }] }
-    ];
-
-    planets.forEach(p => {
-      createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons);
-      const points = [];
-      for (let i = 0; i <= 360; i++) {
-        const rad = BABYLON.Tools.ToRadians(i);
-        points.push(new BABYLON.Vector3(Math.cos(rad) * p.dist, 0, Math.sin(rad) * p.dist));
-      }
-      const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points }, scene);
-      orbit.color = BABYLON.Color3.White(); orbit.alpha = 0.05;
-      orbitLines.push(orbit);
+  moons.forEach((moon, i) => {
+    const m = BABYLON.MeshBuilder.CreateSphere(`${name}_moon_${i}`, { diameter: moon.size }, scene);
+    const moonMat = new BABYLON.StandardMaterial(`${name}_moonMat_${i}`, scene);
+    moonMat.diffuseColor = moon.color;
+    m.material = moonMat;
+    let mAngle = Math.random() * Math.PI * 2;
+    scene.registerBeforeRender(() => {
+      mAngle += moon.speed * timeFactor;
+      m.position.x = planet.position.x + Math.cos(mAngle) * moon.distance;
+      m.position.z = planet.position.z + Math.sin(mAngle) * moon.distance;
     });
+  });
 
-    // GUI
-    const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-    const panel = new BABYLON.GUI.Rectangle();
-    panel.width = "220px"; panel.height = "auto"; panel.background = "rgba(20,20,20,0.85)";
-    panel.cornerRadius = 8; panel.thickness = 0; panel.isVisible = false;
-    panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-     gui.addControl(panel);
+  planet.actionManager = new BABYLON.ActionManager(scene);
+  planet.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+    BABYLON.ActionManager.OnPickTrigger,
+    () => showPlanetInfo(name)
+  ));
 
-    const stack = new BABYLON.GUI.StackPanel(); 
-    panel.addControl(stack);
-    function addButton(label, callback) {
-    const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
-    btn.height = "30px"; btn.color = "lightgreen"; 
-    btn.background = "transparent";
-    btn.onPointerClickObservable.add(callback);
-    stack.addControl(btn);
+  return planet;
+}
+let timeFactor = 1;
+const orbitLines = [];
+
+const planets = [
+  {
+    name: "Earth", size: 2.5, dist: 150, speed: 0.001, color: new BABYLON.Color3(0.3, 0.6, 1),
+    moons: [ { size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() } ]
+  }
+];
+
+planets.forEach(p => {
+  createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons);
+  const points = [];
+  for (let i = 0; i <= 360; i++) {
+    const rad = BABYLON.Tools.ToRadians(i);
+    points.push(new BABYLON.Vector3(Math.cos(rad) * p.dist, 0, Math.sin(rad) * p.dist));
+  }
+  const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points }, scene);
+  orbit.color = BABYLON.Color3.White();
+  orbit.alpha = 0.05;
+  orbitLines.push(orbit);
+});
+const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+const panel = new BABYLON.GUI.Rectangle();
+panel.width = "220px";
+panel.background = "rgba(20,20,20,0.85)";
+panel.cornerRadius = 8;
+panel.thickness = 0;
+panel.paddingTop = "10px";
+panel.paddingLeft = "10px";
+panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+panel.isVisible = false;
+gui.addControl(panel);
+
+const stack = new BABYLON.GUI.StackPanel();
+panel.addControl(stack);
+
+function addButton(label, callback) {
+  const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
+  btn.height = "30px";
+  btn.color = "lightgreen";
+  btn.background = "transparent";
+  btn.onPointerClickObservable.add(callback);
+  stack.addControl(btn);
+}
+
+addButton("Pause", () => timeFactor = 0);
+addButton("1x", () => timeFactor = 1);
+addButton("10x", () => timeFactor = 10);
+
+const toggleBtn = BABYLON.GUI.Button.CreateSimpleButton("menuToggle", "☰");
+toggleBtn.width = "40px"; toggleBtn.height = "40px";
+toggleBtn.color = "white"; toggleBtn.background = "rgba(0,0,0,0.6)";
+toggleBtn.cornerRadius = 6; toggleBtn.fontSize = 24;
+toggleBtn.paddingTop = "10px"; toggleBtn.paddingLeft = "10px";
+toggleBtn.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+toggleBtn.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+toggleBtn.onPointerClickObservable.add(() => panel.isVisible = !panel.isVisible);
+gui.addControl(toggleBtn);
+const infoPanel = new BABYLON.GUI.Rectangle();
+infoPanel.width = "300px";
+infoPanel.background = "rgba(0,0,0,0.75)";
+infoPanel.cornerRadius = 10;
+infoPanel.thickness = 0;
+infoPanel.isVisible = false;
+infoPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+infoPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+
+const infoStack = new BABYLON.GUI.StackPanel();
+infoPanel.addControl(infoStack);
+
+const planetTitle = new BABYLON.GUI.TextBlock();
+planetTitle.fontSize = 20;
+planetTitle.color = "white";
+infoStack.addControl(planetTitle);
+
+const planetFact = new BABYLON.GUI.TextBlock();
+planetFact.fontSize = 16;
+planetFact.color = "#ccc";
+planetFact.textWrapping = true;
+infoStack.addControl(planetFact);
+
+const planetLink = new BABYLON.GUI.TextBlock();
+planetLink.fontSize = 14;
+planetLink.color = "#80BFFF";
+planetLink.onPointerClickObservable.add(() => {
+  window.open(planetLink.text, "_blank");
+});
+infoStack.addControl(planetLink);
+gui.addControl(infoPanel);
+
+function showPlanetInfo(name) {
+  const facts = {
+    Earth: {
+      text: "Our home. The only planet known to support life.",
+      link: "https://solarsystem.nasa.gov/planets/earth/overview/"
     }
-
-    addButton("Time: Pause", ()=>{ timeFactor = 0; });
-    addButton("Time: 1x", ()=>{ timeFactor = 1; });
-    addButton("Time: 10x", ()=>{ timeFactor = 10; });
-
-    const toggleBtn = BABYLON.GUI.Button.CreateSimpleButton("toggle", "☰");
-    toggleBtn.width = "40px"; 
-    toggleBtn.height = "40px"; 
-    toggleBtn.color = "white";
-    toggleBtn.background = "rgba(0,0,0,0.6)"; 
-    toggleBtn.cornerRadius = 6; 
-    toggleBtn.fontSize = 24;
-    toggleBtn.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    toggleBtn.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-    toggleBtn.paddingTop = "10px"; 
-    toggleBtn.paddingLeft = "10px";
-    toggleBtn.onPointerClickObservable.add(() => { panel.isVisible = !panel.isVisible; });
-    gui.addControl(toggleBtn);
-
-    // Info Panel
-    const infoPanel = new BABYLON.GUI.Rectangle();
-    infoPanel.width = "300px"; infoPanel.height = "auto"; 
-    infoPanel.cornerRadius = 10;
-    infoPanel.thickness = 0; infoPanel.background = "rgba(0,0,0,0.75)";
-    infoPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-    infoPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-    infoPanel.isVisible = false;
-    const infoStack = new BABYLON.GUI.StackPanel(); 
-    infoPanel.addControl(infoStack);
-    const planetTitle = new BABYLON.GUI.TextBlock(); 
-    planetTitle.fontSize = 20; planetTitle.color = "white";
-    const planetFact = new BABYLON.GUI.TextBlock(); 
-    planetFact.fontSize = 16; planetFact.color = "#ccc"; 
-    planetFact.textWrapping = true;
-    const planetLink = new BABYLON.GUI.TextBlock(); 
-    planetLink.fontSize = 14; planetLink.color = "#80BFFF";
-    planetLink.onPointerClickObservable.add(() => { window.open(planetLink.text, "_blank"); });
-    infoStack.addControl(planetTitle); 
-    infoStack.addControl(planetFact); 
-    infoStack.addControl(planetTitle);
-    infoStack.addControl(planetFact);
-    infoStack.addControl(planetLink);
-     gui.addControl(infoPanel);
-
-    function showPlanetInfo(name) {
-      const facts = {
-        Earth: {
-          text: "Our home. The only planet known to support life.",
-          link: "https://solarsystem.nasa.gov/planets/earth/overview/"
-        },
-        // Add other planets here if needed
-      };
-
-      const data = facts[name];
-      if (data) {
-        planetTitle.text = name;
-        planetFact.text = data.text;
-        planetLink.text = data.link;
-        infoPanel.isVisible = true;
-
-        const target = scene.getMeshByName(name);
-        if (target) {
-          camera.setTarget(target.position);
-          const zoomAnim = new BABYLON.Animation(
-            "zoomIn", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT
-          );
-          zoomAnim.setKeys([
-            { frame: 0, value: camera.radius },
-            { frame: 15, value: Math.max(100, camera.lowerRadiusLimit + 50) }
-          ]);
-          camera.animations = [zoomAnim];
-          scene.beginAnimation(camera, 0, 15, false);
-        }
-      }
+    // Add other planets if needed
+  };
+  const data = facts[name];
+  if (data) {
+    planetTitle.text = name;
+    planetFact.text = data.text;
+    planetLink.text = data.link;
+    infoPanel.isVisible = true;
+    const target = scene.getMeshByName(name);
+    if (target) {
+      camera.setTarget(target.position);
+      const zoom = new BABYLON.Animation("zoom", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+      zoom.setKeys([{ frame: 0, value: camera.radius }, { frame: 15, value: 200 }]);
+      camera.animations = [zoom];
+      scene.beginAnimation(camera, 0, 15, false);
     }
+  }
+}
 const moveKeys = { forward: false, back: false, left: false, right: false };
 
 scene.onKeyboardObservable.add((kbInfo) => {
@@ -210,11 +240,11 @@ scene.onKeyboardObservable.add((kbInfo) => {
   const key = kbInfo.event.key.toLowerCase();
   switch (key) {
     case 'w':
-    case 'arrowup': moveKeys.forward = pressed; break;
+    case 'arrowup':    moveKeys.forward = pressed; break;
     case 's':
-    case 'arrowdown': moveKeys.back = pressed; break;
+    case 'arrowdown':  moveKeys.back = pressed; break;
     case 'a':
-    case 'arrowleft': moveKeys.left = pressed; break;
+    case 'arrowleft':  moveKeys.left = pressed; break;
     case 'd':
     case 'arrowright': moveKeys.right = pressed; break;
   }
@@ -222,34 +252,32 @@ scene.onKeyboardObservable.add((kbInfo) => {
 
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
-  if (key === 'f') {
+  if (key === "f") {
     document.fullscreenElement
       ? document.exitFullscreen()
       : document.documentElement.requestFullscreen();
-  } else if (key === 'z') {
+  } else if (key === "z") {
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.radius = 2500;
-  } else if (key === 'x') {
+  } else if (key === "x") {
     camera.radius = Math.max(camera.lowerRadiusLimit + 10, camera.radius * 0.9);
   }
 });
 engine.runRenderLoop(() => {
   const speed = 5;
-  const direction = new BABYLON.Vector3(
+  const dir = new BABYLON.Vector3(
     (moveKeys.right ? 1 : 0) - (moveKeys.left ? 1 : 0),
     0,
     (moveKeys.back ? 1 : 0) - (moveKeys.forward ? 1 : 0)
   );
-  if (!direction.equals(BABYLON.Vector3.Zero())) {
-    const transformed = BABYLON.Vector3.TransformCoordinates(direction, BABYLON.Matrix.RotationY(camera.alpha));
+  if (!dir.equals(BABYLON.Vector3.Zero())) {
+    const transformed = BABYLON.Vector3.TransformCoordinates(dir, BABYLON.Matrix.RotationY(camera.alpha));
     camera.target.addInPlace(transformed.scale(speed));
   }
   scene.render();
 });
 
-window.addEventListener("resize", () => {
-  engine.resize();
-});
+window.addEventListener("resize", () => engine.resize());
 
 window.addEventListener("DOMContentLoaded", () => {
   engine.resize();
@@ -262,11 +290,11 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 });
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
     .then(() => console.log("✅ Service Worker registered"))
     .catch(err => console.error("🛑 Service Worker registration failed:", err));
 }
-  </script>
+</script>
 </body>
 </html>
