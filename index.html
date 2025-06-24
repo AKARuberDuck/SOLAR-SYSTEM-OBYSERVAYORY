@@ -4,17 +4,24 @@
   <meta charset="UTF-8" />
   <title>Galactic Observatory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.png" />
-  <meta name="theme-color" content="#000000" />
   <style>
     html, body {
-      margin: 0; padding: 0;
-      width: 100%; height: 100%;
-      background: black; font-family: sans-serif;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: black;
+      font-family: sans-serif;
     }
-    canvas { display: block; width: 100%; height: 100%; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     #splash-screen {
       position: fixed;
       top: 0; left: 0;
@@ -36,7 +43,7 @@
 </head>
 <body>
   <div id="splash-screen">
-    <img src="splash-loading-screen.png" alt="Loading Galactic Observatory..." />
+    <img src="splash-loading-screen.png" alt="Loading..." />
   </div>
   <canvas id="renderCanvas"></canvas>
 <script>
@@ -76,6 +83,7 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
     p.position.z = Math.sin(angle) * dist;
   });
 
+  // Label
   const label = BABYLON.MeshBuilder.CreatePlane(name + "_label", { size: 8 }, scene);
   label.parent = p;
   label.position.y = size + 2;
@@ -86,6 +94,7 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
   text.fontSize = 24;
   guiTex.addControl(text);
 
+  // Moons
   moons.forEach((moon, i) => {
     const m = BABYLON.MeshBuilder.CreateSphere(`${name}_moon_${i}`, { diameter: moon.size }, scene);
     const mMat = new BABYLON.StandardMaterial(`${name}_moonMat_${i}`, scene);
@@ -111,30 +120,28 @@ function createPlanet(name, size, dist, speed, color, moons = []) {
 <script>
 const planets = [
   { name: "Mercury", size: 1.5, dist: 58, speed: 0.0047, color: BABYLON.Color3.Gray(), moons: [] },
-  { name: "Venus", size: 2.2, dist: 108, speed: 0.0035, color: new BABYLON.Color3(1.0, 0.85, 0.6), moons: [] },
-  { name: "Earth", size: 2.5, dist: 150, speed: 0.003, color: new BABYLON.Color3(0.3, 0.6, 1),
-    moons: [{ size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() }] },
-  { name: "Mars", size: 2.0, dist: 228, speed: 0.0024, color: new BABYLON.Color3(0.9, 0.4, 0.3),
-    moons: [
-      { size: 0.4, distance: 4, speed: 0.035, color: BABYLON.Color3.Gray() },
-      { size: 0.4, distance: 6, speed: 0.028, color: BABYLON.Color3.Gray() }
-    ] },
-  { name: "Jupiter", size: 6.0, dist: 778, speed: 0.0013, color: new BABYLON.Color3(0.9, 0.8, 0.6),
-    moons: [
-      { size: 1.1, distance: 10, speed: 0.018, color: BABYLON.Color3.White() },
-      { size: 1.0, distance: 13, speed: 0.015, color: BABYLON.Color3.White() },
-      { size: 1.0, distance: 15, speed: 0.012, color: BABYLON.Color3.White() }
-    ] },
-  { name: "Saturn", size: 5.5, dist: 1430, speed: 0.00095, color: new BABYLON.Color3(1.0, 0.9, 0.5),
-    moons: [{ size: 0.9, distance: 11, speed: 0.013, color: BABYLON.Color3.Yellow() }] },
+  { name: "Venus", size: 2.2, dist: 108, speed: 0.0035, color: new BABYLON.Color3(1, 0.85, 0.6), moons: [] },
+  { name: "Earth", size: 2.5, dist: 150, speed: 0.003, color: new BABYLON.Color3(0.3, 0.6, 1), moons: [
+    { size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() }
+  ]},
+  { name: "Mars", size: 2.0, dist: 228, speed: 0.0024, color: new BABYLON.Color3(0.9, 0.4, 0.3), moons: [
+    { size: 0.4, distance: 4, speed: 0.035, color: BABYLON.Color3.Gray() },
+    { size: 0.4, distance: 6, speed: 0.028, color: BABYLON.Color3.Gray() }
+  ]},
+  { name: "Jupiter", size: 6.0, dist: 778, speed: 0.0013, color: new BABYLON.Color3(0.9, 0.8, 0.6), moons: [
+    { size: 1.1, distance: 10, speed: 0.018, color: BABYLON.Color3.White() },
+    { size: 1.0, distance: 13, speed: 0.015, color: BABYLON.Color3.White() },
+    { size: 1.0, distance: 15, speed: 0.012, color: BABYLON.Color3.White() }
+  ]},
+  { name: "Saturn", size: 5.5, dist: 1430, speed: 0.00095, color: new BABYLON.Color3(1.0, 0.9, 0.5), moons: [
+    { size: 0.9, distance: 11, speed: 0.013, color: BABYLON.Color3.Yellow() }
+  ]},
   { name: "Uranus", size: 4.5, dist: 2870, speed: 0.00068, color: new BABYLON.Color3(0.6, 0.9, 1), moons: [] },
   { name: "Neptune", size: 4.3, dist: 4495, speed: 0.00054, color: new BABYLON.Color3(0.3, 0.5, 1), moons: [] },
   { name: "Pluto", size: 1.1, dist: 5900, speed: 0.00047, color: new BABYLON.Color3(0.8, 0.8, 1), moons: [] },
   { name: "Ceres", size: 0.9, dist: 413, speed: 0.0015, color: new BABYLON.Color3(0.9, 0.9, 0.9), moons: [] },
   { name: "Eris", size: 1.0, dist: 6700, speed: 0.00041, color: new BABYLON.Color3(1.0, 1.0, 0.9), moons: [] }
 ];
-</script>
-<script>
 const orbitLines = [];
 
 planets.forEach(p => {
@@ -143,11 +150,7 @@ planets.forEach(p => {
   const points = [];
   for (let i = 0; i <= 360; i++) {
     const rad = BABYLON.Tools.ToRadians(i);
-    points.push(new BABYLON.Vector3(
-      Math.cos(rad) * p.dist,
-      0,
-      Math.sin(rad) * p.dist
-    ));
+    points.push(new BABYLON.Vector3(Math.cos(rad) * p.dist, 0, Math.sin(rad) * p.dist));
   }
 
   const orbit = BABYLON.MeshBuilder.CreateLines(`${p.name}_orbit`, { points }, scene);
@@ -155,18 +158,16 @@ planets.forEach(p => {
   orbit.alpha = 0.04;
   orbitLines.push(orbit);
 });
-</script>
-<script>
+
+// Asteroid Belt
 for (let i = 0; i < 400; i++) {
   const dist = 400 + Math.random() * 200;
   const size = 0.2 + Math.random() * 0.3;
   const theta = Math.random() * Math.PI * 2;
-
   const a = BABYLON.MeshBuilder.CreateSphere("asteroid" + i, { diameter: size }, scene);
   const mat = new BABYLON.StandardMaterial("asteroidMat" + i, scene);
   mat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
   a.material = mat;
-
   scene.registerBeforeRender(() => {
     const t = theta + engine.getDeltaTime() * 0.0000018 * i;
     a.position.x = Math.cos(t) * dist;
@@ -174,21 +175,13 @@ for (let i = 0; i < 400; i++) {
     a.position.y = Math.sin(i * 0.008) * 1.5;
   });
 }
-</script>
-<script>
+
+// Constellations
 const constellations = {
-  Orion: [
-    new BABYLON.Vector3(-80, 40, 60),
-    new BABYLON.Vector3(-70, 42, 55),
-    new BABYLON.Vector3(-60, 41, 50)
-  ],
+  Orion: [new BABYLON.Vector3(-80, 40, 60), new BABYLON.Vector3(-70, 42, 55), new BABYLON.Vector3(-60, 41, 50)],
   UrsaMajor: [
-    new BABYLON.Vector3(200, 90, -400),
-    new BABYLON.Vector3(220, 92, -390),
-    new BABYLON.Vector3(240, 94, -380),
-    new BABYLON.Vector3(260, 93, -370),
-    new BABYLON.Vector3(280, 91, -360),
-    new BABYLON.Vector3(300, 89, -350),
+    new BABYLON.Vector3(200, 90, -400), new BABYLON.Vector3(220, 92, -390), new BABYLON.Vector3(240, 94, -380),
+    new BABYLON.Vector3(260, 93, -370), new BABYLON.Vector3(280, 91, -360), new BABYLON.Vector3(300, 89, -350),
     new BABYLON.Vector3(320, 87, -340)
   ]
 };
@@ -217,10 +210,9 @@ Object.entries(constellations).forEach(([name, stars]) => {
 <script>
 const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-// Info Panel
 const infoPanel = new BABYLON.GUI.Rectangle();
 infoPanel.width = "300px";
-infoPanel.background = "rgba(0,0,0,0.75)";
+infoPanel.background = "rgba(0,0,0,0.85)";
 infoPanel.cornerRadius = 10;
 infoPanel.thickness = 0;
 infoPanel.isVisible = false;
@@ -228,77 +220,146 @@ infoPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
 infoPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
 
 const infoStack = new BABYLON.GUI.StackPanel();
+infoStack.height = "100%";
+infoStack.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+infoStack.isVertical = true;
+infoStack.verticalScrollbar = true;
+infoStack.scrollbarWidth = 4;
 infoPanel.addControl(infoStack);
+
+const closeBtn = BABYLON.GUI.Button.CreateSimpleButton("closeBtn", "✖");
+closeBtn.width = "30px"; closeBtn.height = "30px";
+closeBtn.color = "white"; closeBtn.background = "transparent";
+closeBtn.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+closeBtn.onPointerClickObservable.add(() => infoPanel.isVisible = false);
+infoStack.addControl(closeBtn);
 
 const planetTitle = new BABYLON.GUI.TextBlock();
 planetTitle.fontSize = 20;
 planetTitle.color = "white";
-planetTitle.height = "30px"; // fixed height to avoid layout warning
+planetTitle.height = "30px";
 infoStack.addControl(planetTitle);
 
 const planetFact = new BABYLON.GUI.TextBlock();
 planetFact.fontSize = 16;
 planetFact.color = "#ccc";
 planetFact.textWrapping = true;
-planetFact.height = "60px"; // fixed height
+planetFact.height = "80px";
 infoStack.addControl(planetFact);
+
+const showMoreBtn = BABYLON.GUI.Button.CreateSimpleButton("showMore", "Show More");
+showMoreBtn.height = "30px";
+showMoreBtn.color = "lightblue";
+showMoreBtn.background = "transparent";
+infoStack.addControl(showMoreBtn);
 
 const planetLink = new BABYLON.GUI.TextBlock();
 planetLink.fontSize = 14;
 planetLink.color = "#80BFFF";
 planetLink.textWrapping = true;
-planetLink.height = "20px"; // fixed height
-planetLink.onPointerClickObservable.add(() => {
-  window.open(planetLink.text, "_blank");
-});
+planetLink.height = "20px";
+planetLink.onPointerClickObservable.add(() => window.open(planetLink.text, "_blank"));
 infoStack.addControl(planetLink);
 
 gui.addControl(infoPanel);
 
+const facts = {
+  Mercury: {
+    short: "Closest planet to the Sun. Small, rocky, cratered.",
+    long: "Mercury’s lack of atmosphere means huge temperature swings: 800°F by day, -290°F by night. It has a fast orbit but rotates slowly.",
+    link: "https://solarsystem.nasa.gov/planets/mercury/overview/"
+  },
+  Venus: {
+    short: "Thick atmosphere. Hottest planet in the solar system.",
+    long: "Venus is a world of intense heat and crushing pressure. Its sulfuric acid clouds and retrograde rotation make it truly otherworldly.",
+    link: "https://solarsystem.nasa.gov/planets/venus/overview/"
+  },
+  Earth: {
+    short: "The only known planet to support life.",
+    long: "Earth has a breathable atmosphere, surface water, and a magnetic field that shelters us from solar radiation.",
+    link: "https://solarsystem.nasa.gov/planets/earth/overview/"
+  },
+  Mars: {
+    short: "The Red Planet with icy poles and dusty terrain.",
+    long: "Mars hosts the tallest volcano in the solar system and signs of ancient water. It may yet harbor microbial life below the surface.",
+    link: "https://solarsystem.nasa.gov/planets/mars/overview/"
+  },
+  Jupiter: {
+    short: "Largest planet. Gas giant with swirling storms.",
+    long: "Jupiter’s iconic Great Red Spot and 92 known moons make it a miniature solar system in its own right.",
+    link: "https://solarsystem.nasa.gov/planets/jupiter/overview/"
+  },
+  Saturn: {
+    short: "Famous for its rings. Gas giant with many moons.",
+    long: "Saturn’s ice and rock rings span over 170,000 miles. It has more than 80 moons, including Titan with thick atmosphere.",
+    link: "https://solarsystem.nasa.gov/planets/saturn/overview/"
+  },
+  Uranus: {
+    short: "Icy blue giant tilted nearly sideways.",
+    long: "Uranus rolls around the Sun on its side with rings and moons in tow. Its atmosphere contains methane, giving it a cyan color.",
+    link: "https://solarsystem.nasa.gov/planets/uranus/overview/"
+  },
+  Neptune: {
+    short: "Dark, windy ice giant with supersonic storms.",
+    long: "Neptune is the farthest major planet. It radiates more heat than it receives and has the fastest winds in the solar system.",
+    link: "https://solarsystem.nasa.gov/planets/neptune/overview/"
+  },
+  Pluto: {
+    short: "Dwarf planet with a heart-shaped ice plain.",
+    long: "Once the ninth planet, Pluto has seasons and weather. Its largest moon Charon is so close, they’re tidally locked in orbit.",
+    link: "https://solarsystem.nasa.gov/planets/dwarf-planets/pluto/overview/"
+  },
+  Ceres: {
+    short: "The largest object in the asteroid belt.",
+    long: "Ceres is a dwarf planet between Mars and Jupiter with evidence of water-ice beneath its surface.",
+    link: "https://solarsystem.nasa.gov/planets/dwarf-planets/ceres/overview/"
+  },
+  Eris: {
+    short: "Icy dwarf planet beyond Pluto.",
+    long: "Eris is one of the most massive known dwarf planets. It’s incredibly reflective and has an eccentric orbit.",
+    link: "https://solarsystem.nasa.gov/planets/dwarf-planets/eris/overview/"
+  }
+};
+
+let expanded = false;
+
 function showPlanetInfo(name) {
-  const facts = {
-    Mercury: { text: "Closest planet to the Sun.", link: "https://solarsystem.nasa.gov/planets/mercury/overview/" },
-    Venus: { text: "Shrouded in clouds and heat.", link: "https://solarsystem.nasa.gov/planets/venus/overview/" },
-    Earth: { text: "The only known world with life.", link: "https://solarsystem.nasa.gov/planets/earth/overview/" },
-    Mars: { text: "A dusty red desert of ancient rivers.", link: "https://solarsystem.nasa.gov/planets/mars/overview/" },
-    Jupiter: { text: "A giant with a raging red storm.", link: "https://solarsystem.nasa.gov/planets/jupiter/overview/" },
-    Saturn: { text: "Wrapped in rings of frozen beauty.", link: "https://solarsystem.nasa.gov/planets/saturn/overview/" },
-    Uranus: { text: "An icy giant that spins sideways.", link: "https://solarsystem.nasa.gov/planets/uranus/overview/" },
-    Neptune: { text: "Windswept and blue, farthest known.", link: "https://solarsystem.nasa.gov/planets/neptune/overview/" },
-    Pluto: { text: "Cold and curious with icy plains.", link: "https://solarsystem.nasa.gov/planets/dwarf-planets/pluto/overview/" },
-    Ceres: { text: "A dwarf planet in the asteroid belt.", link: "https://solarsystem.nasa.gov/planets/dwarf-planets/ceres/overview/" },
-    Eris: { text: "Reflective and distant beyond Pluto.", link: "https://solarsystem.nasa.gov/planets/dwarf-planets/eris/overview/" }
-  };
-  if (!data) {
-  planetTitle.text = name;
-  planetFact.text = "No data available.";
-  planetLink.text = "";
-  infoPanel.isVisible = true;
-  return;
-}
-
   const data = facts[name];
-  if (data) {
+  if (!data) {
     planetTitle.text = name;
-    planetFact.text = data.text;
-    planetLink.text = data.link;
+    planetFact.text = "A mysterious world drifting through space. Data unavailable.";
+    planetLink.text = "";
+    showMoreBtn.isVisible = false;
     infoPanel.isVisible = true;
+    return;
+  }
 
-    const target = scene.getMeshByName(name);
-    if (target) {
-      camera.setTarget(target.position);
-      const anim = new BABYLON.Animation("zoom", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
-      anim.setKeys([
-        { frame: 0, value: camera.radius },
-        { frame: 15, value: 200 }
-      ]);
-      camera.animations = [anim];
-      scene.beginAnimation(camera, 0, 15, false);
-    }
+  planetTitle.text = name;
+  planetFact.text = data.short;
+  planetLink.text = data.link;
+  infoPanel.isVisible = true;
+  showMoreBtn.isVisible = true;
+  expanded = false;
+  showMoreBtn.textBlock.text = "Show More";
+
+  showMoreBtn.onPointerClickObservable.clear();
+  showMoreBtn.onPointerClickObservable.add(() => {
+    expanded = !expanded;
+    planetFact.text = expanded ? data.long : data.short;
+    showMoreBtn.textBlock.text = expanded ? "Show Less" : "Show More";
+  });
+
+  const target = scene.getMeshByName(name);
+  if (target) {
+    camera.setTarget(target.position);
+    const zoom = new BABYLON.Animation("zoom", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+    zoom.setKeys([{ frame: 0, value: camera.radius }, { frame: 15, value: 200 }]);
+    camera.animations = [zoom];
+    scene.beginAnimation(camera, 0, 15, false);
   }
 }
-
-// GUI Menu Panel
+</script>
+<script>
 const panel = new BABYLON.GUI.Rectangle();
 panel.width = "220px";
 panel.background = "rgba(20,20,20,0.85)";
@@ -316,7 +377,7 @@ panel.addControl(stack);
 
 function addButton(label, callback) {
   const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
-  btn.height = "30px"; // fixed height to avoid layout warning
+  btn.height = "30px";
   btn.width = "100%";
   btn.color = "lightgreen";
   btn.background = "transparent";
@@ -363,9 +424,8 @@ toggleBtn.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
 toggleBtn.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
 toggleBtn.onPointerClickObservable.add(() => panel.isVisible = !panel.isVisible);
 gui.addControl(toggleBtn);
-</script>
-<script>
-// Keyboard movement flags
+
+// Keyboard movement
 const moveKeys = { forward: false, back: false, left: false, right: false };
 
 scene.onKeyboardObservable.add(kb => {
@@ -423,7 +483,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }, 1000);
 });
 
-// Service worker registration
+// Service worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js")
     .then(() => console.log("✅ Service Worker registered"))
