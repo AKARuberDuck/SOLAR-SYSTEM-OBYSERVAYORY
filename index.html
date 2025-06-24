@@ -121,12 +121,109 @@ const orbitLines = [];
 
 const planets = [
   {
-    name: "Earth", size: 2.5, dist: 150, speed: 0.001, color: new BABYLON.Color3(0.3, 0.6, 1),
-    moons: [ { size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() } ]
+    name: "Mercury",
+    size: 1.5,
+    dist: 58,
+    speed: 0.0047,
+    color: BABYLON.Color3.Gray(),
+    moons: []
+  },
+  {
+    name: "Venus",
+    size: 2.2,
+    dist: 108,
+    speed: 0.0035,
+    color: new BABYLON.Color3(1.0, 0.85, 0.6),
+    moons: []
+  },
+  {
+    name: "Earth",
+    size: 2.5,
+    dist: 150,
+    speed: 0.003,
+    color: new BABYLON.Color3(0.3, 0.6, 1),
+    moons: [
+      { size: 0.7, distance: 5, speed: 0.03, color: BABYLON.Color3.White() }
+    ]
+  },
+  {
+    name: "Mars",
+    size: 2.0,
+    dist: 228,
+    speed: 0.0024,
+    color: new BABYLON.Color3(0.9, 0.4, 0.3),
+    moons: [
+      { size: 0.4, distance: 4, speed: 0.035, color: BABYLON.Color3.Gray() },
+      { size: 0.4, distance: 6, speed: 0.028, color: BABYLON.Color3.Gray() }
+    ]
+  },
+  {
+    name: "Jupiter",
+    size: 6.0,
+    dist: 778,
+    speed: 0.0013,
+    color: new BABYLON.Color3(0.9, 0.8, 0.6),
+    moons: [
+      { size: 1.1, distance: 10, speed: 0.018, color: BABYLON.Color3.White() },
+      { size: 1.0, distance: 13, speed: 0.015, color: BABYLON.Color3.White() },
+      { size: 1.0, distance: 15, speed: 0.012, color: BABYLON.Color3.White() }
+    ]
+  },
+  {
+    name: "Saturn",
+    size: 5.5,
+    dist: 1430,
+    speed: 0.00095,
+    color: new BABYLON.Color3(1.0, 0.9, 0.5),
+    moons: [
+      { size: 0.9, distance: 11, speed: 0.013, color: BABYLON.Color3.Yellow() }
+    ]
+  },
+  {
+    name: "Uranus",
+    size: 4.5,
+    dist: 2870,
+    speed: 0.00068,
+    color: new BABYLON.Color3(0.6, 0.9, 1),
+    moons: []
+  },
+  {
+    name: "Neptune",
+    size: 4.3,
+    dist: 4495,
+    speed: 0.00054,
+    color: new BABYLON.Color3(0.3, 0.5, 1),
+    moons: []
+  },
+
+  // 🛰️ Dwarf Planets
+  {
+    name: "Pluto",
+    size: 1.1,
+    dist: 5900,
+    speed: 0.00047,
+    color: new BABYLON.Color3(0.8, 0.8, 1),
+    moons: []
+  },
+  {
+    name: "Ceres",
+    size: 0.9,
+    dist: 413,
+    speed: 0.0015,
+    color: new BABYLON.Color3(0.9, 0.9, 0.9),
+    moons: []
+  },
+  {
+    name: "Eris",
+    size: 1.0,
+    dist: 6700,
+    speed: 0.00041,
+    color: new BABYLON.Color3(1.0, 1.0, 0.9),
+    moons: []
   }
 ];
 
-planets.forEach(p => {
+  planets.forEach(p => {
   createPlanet(p.name, p.size, p.dist, p.speed, p.color, p.moons);
   const points = [];
   for (let i = 0; i <= 360; i++) {
