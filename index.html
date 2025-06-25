@@ -2,25 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Solar Observatory</title>
+  <title>Solar Observatory Plus</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" />
   <meta name="theme-color" content="#000000" />
   <style>
     html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      overflow: hidden; background: black;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
       font-family: 'Segoe UI', sans-serif;
     }
-    canvas { width: 100%; height: 100%; display: block; }
-    #splash-screen {
-      position: absolute; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background-color: black; z-index: 9999;
-      display: flex; align-items: center; justify-content: center;
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
-    #splash-screen img { max-width: 80%; opacity: 0.8; }
+    #splash-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: black;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #splash-screen img {
+      max-width: 80%;
+      opacity: 0.8;
+    }
   </style>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
@@ -37,21 +52,21 @@ const engine = new BABYLON.Engine(canvas, true);
 const scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color3.Black();
 
-const camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.2, 2500, BABYLON.Vector3.Zero(), scene);
+const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.2, 2500, BABYLON.Vector3.Zero(), scene);
 camera.attachControl(canvas, true);
 camera.lowerRadiusLimit = 20;
+camera.upperRadiusLimit = 10000;
 
-const light = new BABYLON.PointLight("sunLight", BABYLON.Vector3.Zero(), scene);
+const light = new BABYLON.PointLight("SunLight", BABYLON.Vector3.Zero(), scene);
 light.intensity = 2.5;
 
 const glowLayer = new BABYLON.GlowLayer("glow", scene);
-
 const starfield = new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
 
 let timeFactor = 1;
 </script>
 <script>
-// Create a visible Sun at the center
+// Sun visual
 const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 30 }, scene);
 const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
 sunMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.1);
@@ -59,492 +74,3 @@ sunMat.disableLighting = true;
 sun.material = sunMat;
 sun.position = BABYLON.Vector3.Zero();
 </script>
-<script>
-const planetsData = [
-  { name: "Mercury", distance: 80, speed: 4.8, size: 4, color: new BABYLON.Color3(0.5, 0.5, 0.5) },
-  { name: "Venus", distance: 120, speed: 3.5, size: 5.5, color: new BABYLON.Color3(0.9, 0.7, 0.3) },
-  { name: "Earth", distance: 160, speed: 2.98, size: 6, color: new BABYLON.Color3(0.4, 0.6, 1) },
-  { name: "Mars", distance: 210, speed: 2.4, size: 5, color: new BABYLON.Color3(1, 0.4, 0.3) },
-  { name: "Jupiter", distance: 280, speed: 1.3, size: 12, color: new BABYLON.Color3(0.8, 0.6, 0.4) },
-  { name: "Saturn", distance: 360, speed: 0.96, size: 10, color: new BABYLON.Color3(1, 0.9, 0.6) },
-  { name: "Uranus", distance: 430, speed: 0.68, size: 8, color: new BABYLON.Color3(0.6, 0.9, 1) },
-  { name: "Neptune", distance: 490, speed: 0.54, size: 8, color: new BABYLON.Color3(0.3, 0.4, 1) },
-  { name: "Pluto", distance: 560, speed: 0.47, size: 2.5, color: new BABYLON.Color3(0.8, 0.8, 0.8) }
-];
-
-planetsData.forEach(p => {
-  const planet = BABYLON.MeshBuilder.CreateSphere(p.name, { diameter: p.size }, scene);
-  const mat = new BABYLON.StandardMaterial(`${p.name}_mat`, scene);
-  mat.diffuseColor = p.color;
-  planet.material = mat;
-
-  // Orbit logic
-  scene.registerBeforeRender(() => {
-    const angle = performance.now() * 0.00001 * p.speed * timeFactor;
-    planet.position.x = Math.cos(angle) * p.distance;
-    planet.position.z = Math.sin(angle) * p.distance;
-    planet.position.y = 0;
-  });
-
-  // Saturn's rings
-  if (p.name === "Saturn") {
-    const ring = BABYLON.MeshBuilder.CreateDisc("SaturnRing", {
-      radius: p.size * 2,
-      tessellation: 64,
-      arc: 1
-    }, scene);
-    const ringMat = new BABYLON.StandardMaterial("SaturnRingMat", scene);
-    ringMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.6);
-    ring.material = ringMat;
-    ring.rotation.x = Math.PI / 3;
-    ring.parent = planet;
-  }
-});
-</script>
-<script>
-planetsData.forEach(p => {
-  const orbit = BABYLON.MeshBuilder.CreateTorus(`${p.name}_orbit`, {
-    diameter: p.distance * 2,
-    thickness: 0.15,
-    tessellation: 100
-  }, scene);
-
-  const orbitMat = new BABYLON.StandardMaterial(`${p.name}_orbit_mat`, scene);
-  orbitMat.emissiveColor = new BABYLON.Color3(0.1, 0.6, 0.8);
-  orbit.material = orbitMat;
-  orbit.rotation.x = Math.PI / 2;
-});
-</script>
-<script>
-const asteroidCount = 200;
-for (let i = 0; i < asteroidCount; i++) {
-  const angle = Math.random() * 2 * Math.PI;
-  const radius = 260 + Math.random() * 60;
-  const height = (Math.random() - 0.5) * 10;
-
-  const rock = BABYLON.MeshBuilder.CreateSphere(`asteroid_${i}`, { diameter: 0.8 }, scene);
-  const mat = new BABYLON.StandardMaterial(`asteroidMat_${i}`, scene);
-  mat.emissiveColor = new BABYLON.Color3(0.9, 0.6, 0.3);
-  rock.material = mat;
-
-  rock.position.set(
-    Math.cos(angle) * radius,
-    height,
-    Math.sin(angle) * radius
-  );
-}
-</script>
-<script>
-const comet = BABYLON.MeshBuilder.CreateSphere("Comet", { diameter: 2 }, scene);
-const cometMat = new BABYLON.StandardMaterial("cometMat", scene);
-cometMat.emissiveColor = new BABYLON.Color3(0.9, 0.9, 1);
-comet.material = cometMat;
-
-const cometTrail = new BABYLON.TrailMesh("cometTrail", comet, scene, 60, 1.2, true);
-const trailMat = new BABYLON.StandardMaterial("cometTrailMat", scene);
-trailMat.emissiveColor = new BABYLON.Color3(0.5, 0.8, 1);
-cometTrail.material = trailMat;
-
-scene.registerBeforeRender(() => {
-  const time = performance.now() * 0.00002 * timeFactor;
-  comet.position.x = Math.sin(time) * 700;
-  comet.position.z = Math.cos(time * 0.8) * 500;
-  comet.position.y = Math.sin(time * 0.5) * 80;
-});
-</script>
-<script>
-// Add subtle atmospheres to gas giants
-["Jupiter", "Saturn", "Uranus", "Neptune"].forEach(name => {
-  const planet = scene.getMeshByName(name);
-  if (!planet) return;
-
-  const glow = BABYLON.MeshBuilder.CreateSphere(`${name}_atmosphere`, {
-    diameter: planet.scaling.x * 1.3 || planet.getBoundingInfo().boundingSphere.radius * 2 * 1.3
-  }, scene);
-
-  const mat = new BABYLON.StandardMaterial(`${name}_atm_mat`, scene);
-  mat.emissiveColor = new BABYLON.Color3(0.2, 0.6, 1);
-  mat.alpha = 0.1;
-  mat.backFaceCulling = false;
-  glow.material = mat;
-  glow.parent = planet;
-});
-</script>
-<script>
-// Utility to convert right ascension / declination to 3D space
-function raDecToPos(ra, dec, radius = 1600) {
-  const raRad = (ra / 24) * 2 * Math.PI;
-  const decRad = BABYLON.Tools.ToRadians(dec);
-  const y = radius * Math.sin(decRad);
-  const xz = radius * Math.cos(decRad);
-  return new BABYLON.Vector3(
-    xz * Math.sin(raRad),
-    y,
-    xz * Math.cos(raRad)
-  );
-}
-
-const constellations = {
-  Orion: [
-    { ra: 5.9195, dec: 7.4 },
-    { ra: 5.2423, dec: -8.2 },
-    { ra: 5.6036, dec: -1.2 }
-  ],
-  UrsaMajor: [
-    { ra: 11.062, dec: 61.8 },
-    { ra: 11.7, dec: 49.3 },
-    { ra: 12.9, dec: 56.0 }
-  ],
-  Scorpius: [
-    { ra: 16.35, dec: -26.4 },
-    { ra: 17.55, dec: -37.1 }
-  ]
-};
-
-Object.entries(constellations).forEach(([name, stars]) => {
-  stars.forEach((s, i) => {
-    const pos = raDecToPos(s.ra, s.dec);
-    const star = BABYLON.MeshBuilder.CreateSphere(`${name}_star_${i}`, { diameter: 1.4 }, scene);
-    const mat = new BABYLON.StandardMaterial(`${name}_mat_${i}`, scene);
-    mat.emissiveColor = BABYLON.Color3.White();
-    star.material = mat;
-    star.position = pos;
-
-    if (i < stars.length - 1) {
-      const next = raDecToPos(stars[i + 1].ra, stars[i + 1].dec);
-      const line = BABYLON.MeshBuilder.CreateLines(`${name}_line_${i}`, {
-        points: [pos, next]
-      }, scene);
-      line.color = new BABYLON.Color3(0.5, 0.8, 1);
-      line.alpha = 0.4;
-    }
-  });
-});
-</script>
-<script>
-const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-const panel = new BABYLON.GUI.Rectangle();
-panel.width = "250px";
-panel.background = "rgba(20,20,20,0.85)";
-panel.cornerRadius = 8;
-panel.thickness = 0;
-panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-gui.addControl(panel);
-
-const stack = new BABYLON.GUI.StackPanel();
-panel.addControl(stack);
-
-// Toggle button helper
-function addButton(label, callback) {
-  const btn = BABYLON.GUI.Button.CreateSimpleButton(label, label);
-  btn.height = "30px";
-  btn.width = "100%";
-  btn.color = "lightgreen";
-  btn.background = "transparent";
-  btn.onPointerClickObservable.add(callback);
-  stack.addControl(btn);
-}
-</script>
-<script>
-let narrationOn = true;
-
-function speak(text, rate = 1) {
-  if (!window.speechSynthesis || !narrationOn) return;
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US";
-  utter.volume = 1;
-  utter.rate = rate;
-  utter.pitch = 1;
-  utter.voice = speechSynthesis.getVoices().find(v => v.lang === "en-US" && v.name.includes("Google")) || null;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utter);
-}
-
-addButton("🔈 Toggle Narration", () => {
-  narrationOn = !narrationOn;
-  if (!narrationOn) speechSynthesis.cancel();
-});
-
-function maybeSpeak(text) {
-  if (narrationOn) speak(text);
-}
-</script>
-<script>
-const quizzes = [
-  { q: "Which planet has the fastest winds?\nA) Mars\nB) Earth\nC) Neptune", a: "C) Neptune" },
-  { q: "Which planet rotates sideways?\nA) Uranus\nB) Mercury\nC) Saturn", a: "A) Uranus" },
-  { q: "Which planet has the most moons?\nA) Mars\nB) Earth\nC) Jupiter", a: "C) Jupiter" }
-];
-
-let currentQuizIndex = -1;
-
-const quizBox = new BABYLON.GUI.Rectangle();
-quizBox.width = "300px";
-quizBox.height = "180px";
-quizBox.background = "rgba(0,0,0,0.85)";
-quizBox.cornerRadius = 10;
-quizBox.thickness = 0;
-quizBox.isVisible = false;
-quizBox.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-quizBox.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-gui.addControl(quizBox);
-
-const quizStack = new BABYLON.GUI.StackPanel();
-quizBox.addControl(quizStack);
-
-const quizText = new BABYLON.GUI.TextBlock();
-quizText.height = "80px";
-quizText.color = "white";
-quizText.textWrapping = true;
-quizText.fontSize = 18;
-quizStack.addControl(quizText);
-
-const answerText = new BABYLON.GUI.TextBlock();
-answerText.height = "30px";
-answerText.color = "#80BFFF";
-quizStack.addControl(answerText);
-
-const showAnswer = BABYLON.GUI.Button.CreateSimpleButton("showAnswer", "Show Answer");
-showAnswer.height = "30px";
-showAnswer.color = "yellow";
-quizStack.addControl(showAnswer);
-
-addButton("🎓 Toggle Quiz", () => {
-  currentQuizIndex = (currentQuizIndex + 1) % quizzes.length;
-  const q = quizzes[currentQuizIndex];
-  quizText.text = q.q;
-  answerText.text = "";
-  maybeSpeak(q.q);
-  showAnswer.textBlock.text = "Show Answer";
-  quizBox.isVisible = true;
-});
-
-showAnswer.onPointerClickObservable.add(() => {
-  const a = quizzes[currentQuizIndex].a;
-  answerText.text = "Answer: " + a;
-  maybeSpeak("The answer is " + a);
-  showAnswer.textBlock.text = "✓ Answer Shown";
-});
-</script>
-<script>
-let issMesh;
-
-function trackISS() {
-  fetch("https://api.wheretheiss.at/v1/satellites/25544")
-    .then(res => res.json())
-    .then(data => {
-      const lat = parseFloat(data.latitude);
-      const lon = parseFloat(data.longitude);
-
-      const radius = 165;
-      const latRad = BABYLON.Tools.ToRadians(lat);
-      const lonRad = BABYLON.Tools.ToRadians(lon);
-
-      const x = radius * Math.cos(latRad) * Math.cos(lonRad);
-      const y = radius * Math.sin(latRad);
-      const z = radius * Math.cos(latRad) * Math.sin(lonRad);
-
-      if (!issMesh) {
-        issMesh = BABYLON.MeshBuilder.CreateBox("ISS", { size: 1.5 }, scene);
-        const mat = new BABYLON.StandardMaterial("issMat", scene);
-        mat.emissiveColor = new BABYLON.Color3(1, 1, 0.5);
-        issMesh.material = mat;
-      }
-
-      issMesh.position.set(x, y, z);
-    });
-}
-
-setInterval(trackISS, 10000);
-trackISS();
-</script>
-<script>
-const trailMeshes = [];
-
-planetsData.forEach(p => {
-  const mesh = scene.getMeshByName(p.name);
-  if (mesh) {
-    const trail = new BABYLON.TrailMesh(`${p.name}_trail`, mesh, scene, 60, 2, true);
-    const mat = new BABYLON.StandardMaterial(`${p.name}_trail_mat`, scene);
-    mat.emissiveColor = new BABYLON.Color3(0.3, 0.8, 1);
-    trail.material = mat;
-    trailMeshes.push(trail);
-  }
-});
-
-scene.onBeforeRenderObservable.add(() => {
-  const show = Math.abs(timeFactor) >= 5;
-  trailMeshes.forEach(t => (t.isVisible = show));
-});
-</script>
-<script>
-const solarWind = [];
-const windCount = 300;
-for (let i = 0; i < windCount; i++) {
-  const particle = BABYLON.MeshBuilder.CreateSphere(`wind_${i}`, { diameter: 0.4 }, scene);
-  const mat = new BABYLON.StandardMaterial(`windMat_${i}`, scene);
-  mat.emissiveColor = new BABYLON.Color3(1, 0.6, 0);
-  mat.alpha = 0.6;
-  particle.material = mat;
-
-  particle.position.set(0, 0, 0);
-  const dir = new BABYLON.Vector3(
-    (Math.random() - 0.5) * 2,
-    (Math.random() - 0.5),
-    (Math.random() - 0.5) * 2
-  ).normalize().scale(0.5 + Math.random());
-
-  solarWind.push({ mesh: particle, dir, dist: 0 });
-}
-
-scene.registerBeforeRender(() => {
-  solarWind.forEach(w => {
-    w.mesh.position.addInPlace(w.dir.scale(2));
-    w.dist += 2;
-    if (w.dist > 800) {
-      w.mesh.position.set(0, 0, 0);
-      w.dist = 0;
-    }
-  });
-});
-</script>
-<script>
-["Jupiter", "Saturn"].forEach(name => {
-  const planet = scene.getMeshByName(name);
-  if (!planet) return;
-
-  const field = BABYLON.MeshBuilder.CreateGround(`${name}_gravity`, {
-    width: 200,
-    height: 200,
-    subdivisions: 20
-  }, scene);
-
-  const mat = new BABYLON.StandardMaterial(`${name}_gravity_mat`, scene);
-  mat.wireframe = true;
-  mat.emissiveColor = new BABYLON.Color3(0.2, 1, 0.6);
-  field.material = mat;
-
-  field.position = planet.position.clone();
-  field.rotation.x = Math.PI / 2;
-});
-</script>
-<script>
-// Orbital adjustment function
-function updatePositionsByDate(date) {
-  const epoch = new Date("2000-01-01");
-  const days = (date - epoch) / (1000 * 60 * 60 * 24);
-
-  planetsData.forEach(p => {
-    const mesh = scene.getMeshByName(p.name);
-    if (!mesh) return;
-    const angle = (days * p.speed * 2 * Math.PI) / 365.25;
-    mesh.position.x = Math.cos(angle) * p.distance;
-    mesh.position.z = Math.sin(angle) * p.distance;
-  });
-}
-
-addButton("📅 Jump to Date", () => {
-  const val = prompt("Enter YYYY-MM-DD", "2024-07-20");
-  const d = new Date(val);
-  if (!isNaN(d)) updatePositionsByDate(d);
-});
-</script>
-<script>
-const mini = new BABYLON.GUI.Rectangle();
-mini.width = "150px";
-mini.height = "150px";
-mini.background = "rgba(0,0,0,0.5)";
-mini.cornerRadius = 8;
-mini.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-mini.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-mini.right = "10px"; mini.bottom = "10px";
-gui.addControl(mini);
-
-const miniCanvas = document.createElement("canvas");
-miniCanvas.width = 150; miniCanvas.height = 150;
-const ctx = miniCanvas.getContext("2d");
-const miniImg = new BABYLON.GUI.Image("mini", miniCanvas.toDataURL());
-mini.addControl(miniImg);
-
-scene.registerBeforeRender(() => {
-  ctx.clearRect(0, 0, 150, 150);
-  ctx.fillStyle = "#222"; ctx.fillRect(0, 0, 150, 150);
-  planetsData.forEach(p => {
-    const m = scene.getMeshByName(p.name);
-    if (!m) return;
-    const x = m.position.x * 0.01 + 75;
-    const y = m.position.z * 0.01 + 75;
-    ctx.fillStyle = "cyan";
-    ctx.beginPath(); ctx.arc(x, y, 2, 0, 2 * Math.PI);
-    ctx.fill();
-  });
-
-  const cx = camera.target.x * 0.01 + 75;
-  const cy = camera.target.z * 0.01 + 75;
-  ctx.fillStyle = "yellow";
-  ctx.fillRect(cx - 2, cy - 2, 4, 4);
-
-  miniImg.source = miniCanvas.toDataURL();
-});
-</script>
-<script>
-const keys = { forward: false, back: false, left: false, right: false };
-
-scene.onKeyboardObservable.add(ev => {
-  const k = ev.event.key.toLowerCase();
-  const press = ev.type === BABYLON.KeyboardEventTypes.KEYDOWN;
-  if (k === "w") keys.forward = press;
-  else if (k === "s") keys.back = press;
-  else if (k === "a") keys.left = press;
-  else if (k === "d") keys.right = press;
-});
-
-window.addEventListener("keydown", e => {
-  const k = e.key.toLowerCase();
-  if (k === "z") camera.setTarget(BABYLON.Vector3.Zero());
-  else if (k === "x") camera.radius *= 0.85;
-  else if (k === "t") camera.radius = 60;
-  else if (k === "f") document.fullscreenElement
-    ? document.exitFullscreen()
-    : document.documentElement.requestFullscreen();
-});
-</script>
-<script>
-engine.runRenderLoop(() => {
-  const move = new BABYLON.Vector3(
-    (keys.right ? 1 : 0) - (keys.left ? 1 : 0),
-    0,
-    (keys.back ? 1 : 0) - (keys.forward ? 1 : 0)
-  );
-  if (!move.equals(BABYLON.Vector3.Zero())) {
-    const rot = BABYLON.Vector3.TransformCoordinates(move, BABYLON.Matrix.RotationY(camera.alpha));
-    camera.target.addInPlace(rot.scale(5));
-  }
-  scene.render();
-});
-
-window.addEventListener("resize", () => engine.resize());
-</script>
-<script>
-window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    const splash = document.getElementById("splash-screen");
-    if (splash) {
-      splash.style.transition = "opacity 1s ease";
-      splash.style.opacity = 0;
-      setTimeout(() => splash.remove(), 1000);
-    }
-  }, 1000);
-});
-</script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js")
-    .then(() => console.log("✅ Service Worker registered"))
-    .catch(e => console.error("SW error:", e));
-}
-</script>
-</body>
-</html>
