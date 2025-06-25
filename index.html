@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Solar Observatory</title>
+  <title>Solar System Observatory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" />
@@ -10,10 +10,9 @@
   <style>
     html, body {
       margin: 0;
-      padding: 0;
+      overflow: hidden;
       width: 100%;
       height: 100%;
-      overflow: hidden;
       background: black;
       font-family: 'Segoe UI', sans-serif;
     }
@@ -24,17 +23,19 @@
     }
     #splash-screen {
       position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background-color: black;
-      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 9999;
     }
     #splash-screen img {
       max-width: 80%;
-      opacity: 0.8;
+      opacity: 0.85;
     }
   </style>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -63,7 +64,6 @@ light.intensity = 2.5;
 const glowLayer = new BABYLON.GlowLayer("glow", scene);
 const starfield = new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
 
-// Global time multiplier and follow lock
 let timeFactor = 1;
 let followPlanet = null;
 </script>
@@ -93,7 +93,6 @@ function addButton(label, callback) {
 }
 </script>
 <script>
-// Central star
 const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 30 }, scene);
 const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
 sunMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.1);
@@ -115,21 +114,21 @@ const planetsData = [
 ];
 
 planetsData.forEach(p => {
-  const planet = BABYLON.MeshBuilder.CreateSphere(p.name, { diameter: p.size }, scene);
+  const mesh = BABYLON.MeshBuilder.CreateSphere(p.name, { diameter: p.size }, scene);
   const mat = new BABYLON.StandardMaterial(`${p.name}_mat`, scene);
   mat.diffuseColor = p.color;
-  planet.material = mat;
+  mesh.material = mat;
 
   scene.registerBeforeRender(() => {
     const t = performance.now() * 0.00001 * p.speed * timeFactor;
-    planet.position.x = Math.cos(t) * p.distance;
-    planet.position.z = Math.sin(t) * p.distance;
-    planet.position.y = 0;
+    mesh.position.x = Math.cos(t) * p.distance;
+    mesh.position.z = Math.sin(t) * p.distance;
+    mesh.position.y = 0;
   });
 
   if (p.name === "Saturn") {
     const ring = BABYLON.MeshBuilder.CreateDisc("SaturnRing", {
-      radius: p.size * 2,
+      radius: p.size * 2.5,
       tessellation: 64,
       arc: 1
     }, scene);
@@ -138,7 +137,7 @@ planetsData.forEach(p => {
     ringMat.alpha = 0.4;
     ring.material = ringMat;
     ring.rotation.x = Math.PI / 3;
-    ring.parent = planet;
+    ring.parent = mesh;
   }
 });
 </script>
@@ -149,7 +148,6 @@ planetsData.forEach(p => {
     thickness: 0.15,
     tessellation: 100
   }, scene);
-
   const orbitMat = new BABYLON.StandardMaterial(`${p.name}_orbit_mat`, scene);
   orbitMat.emissiveColor = new BABYLON.Color3(0.2, 0.6, 0.8);
   orbit.material = orbitMat;
@@ -157,12 +155,10 @@ planetsData.forEach(p => {
 });
 </script>
 <script>
-const asteroidCount = 300;
-for (let i = 0; i < asteroidCount; i++) {
+for (let i = 0; i < 300; i++) {
   const angle = Math.random() * Math.PI * 2;
   const radius = 260 + Math.random() * 60;
   const height = (Math.random() - 0.5) * 8;
-
   const rock = BABYLON.MeshBuilder.CreateSphere(`asteroid_${i}`, { diameter: 0.8 }, scene);
   const mat = new BABYLON.StandardMaterial(`asteroidMat_${i}`, scene);
   mat.emissiveColor = new BABYLON.Color3(1, 0.6, 0.3);
@@ -198,9 +194,7 @@ const stellarSystems = [
     name: "Proxima Centauri",
     pos: new BABYLON.Vector3(-5000, 0, 9000),
     color: new BABYLON.Color3(1, 0.5, 0.5),
-    planets: [
-      { name: "Proxima b", dist: 40, size: 3, speed: 0.5 }
-    ]
+    planets: [{ name: "Proxima b", dist: 40, size: 3, speed: 0.5 }]
   },
   {
     name: "Alpha Centauri",
@@ -212,13 +206,10 @@ const stellarSystems = [
     name: "Kepler-186",
     pos: new BABYLON.Vector3(12000, 0, 12000),
     color: new BABYLON.Color3(0.7, 0.9, 1),
-    planets: [
-      { name: "Kepler-186f", dist: 30, size: 2.8, speed: 0.6 }
-    ]
+    planets: [{ name: "Kepler-186f", dist: 30, size: 2.8, speed: 0.6 }]
   }
 ];
 
-// Create stellar systems
 stellarSystems.forEach(sys => {
   const star = BABYLON.MeshBuilder.CreateSphere(`${sys.name}_star`, { diameter: 20 }, scene);
   const mat = new BABYLON.StandardMaterial(`${sys.name}_mat`, scene);
@@ -245,7 +236,6 @@ stellarSystems.forEach(sys => {
 function jumpToSystem(name) {
   const sys = stellarSystems.find(s => s.name === name);
   if (!sys) return;
-
   followPlanet = null;
 
   const animTarget = new BABYLON.Animation("camToStar", "target", 60, BABYLON.Animation.ANIMATIONTYPE_VECTOR3);
@@ -264,13 +254,12 @@ function jumpToSystem(name) {
   scene.beginAnimation(camera, 0, 120, false);
 
   if (window.speechSynthesis) {
-    const msg = new SpeechSynthesisUtterance(`Jumping to ${sys.name}.`);
+    const msg = new SpeechSynthesisUtterance(`Jumping to ${sys.name}`);
     msg.lang = "en-US";
     speechSynthesis.speak(msg);
   }
 }
 
-// Add jump menu
 addButton("🌌 Stellar Neighborhood", () => {
   const popup = new BABYLON.GUI.StackPanel();
   popup.width = "200px";
@@ -281,7 +270,7 @@ addButton("🌌 Stellar Neighborhood", () => {
   gui.addControl(popup);
 
   stellarSystems.forEach(sys => {
-    const btn = BABYLON.GUI.Button.CreateSimpleButton(`sysbtn_${sys.name}`, `↗ ${sys.name}`);
+    const btn = BABYLON.GUI.Button.CreateSimpleButton(`btn_${sys.name}`, `↗ ${sys.name}`);
     btn.height = "30px";
     btn.color = "violet";
     btn.background = "transparent";
@@ -294,38 +283,12 @@ addButton("🌌 Stellar Neighborhood", () => {
 });
 </script>
 <script>
-function generateMoons(parentName, count) {
-  const parent = scene.getMeshByName(parentName);
-  if (!parent) return;
-
-  for (let i = 0; i < count; i++) {
-    const moon = BABYLON.MeshBuilder.CreateSphere(`${parentName}_moon_${i}`, { diameter: 1.2 }, scene);
-    const mat = new BABYLON.StandardMaterial(`moonMat_${i}`, scene);
-    mat.emissiveColor = new BABYLON.Color3(0.6, 0.6, 0.7);
-    moon.material = mat;
-
-    const radius = 10 + i * 4;
-    const speed = 0.3 + Math.random() * 0.5;
-    const offset = Math.random() * Math.PI * 2;
-
-    scene.registerBeforeRender(() => {
-      const angle = performance.now() * 0.00002 * speed * timeFactor + offset;
-      moon.position.x = parent.position.x + Math.cos(angle) * radius;
-      moon.position.z = parent.position.z + Math.sin(angle) * radius;
-      moon.position.y = parent.position.y;
-    });
-  }
-}
-
-["Jupiter", "Saturn", "Uranus", "Neptune"].forEach(p => generateMoons(p, 3));
-</script>
-<script>
 const copilotFacts = [
-  "Neptune has winds faster than sound.",
-  "Pluto's orbit is tilted compared to the other planets.",
-  "Jupiter protects Earth by deflecting comets.",
-  "The Oort Cloud may contain trillions of icy bodies.",
-  "Light from the Sun takes 8 minutes to reach Earth."
+  "Neptune's winds exceed 1,200 mph.",
+  "Jupiter’s Great Red Spot is a storm twice Earth’s size.",
+  "Light takes over 4 years to reach us from Alpha Centauri.",
+  "Saturn's rings are mostly ice chunks and rock debris.",
+  "Proxima b is in the habitable zone of its star."
 ];
 
 function showCopilotFact() {
@@ -360,10 +323,108 @@ function showCopilotFact() {
   setTimeout(() => gui.removeControl(bubble), 8000);
 }
 
-// Trigger every 3 minutes
-setInterval(showCopilotFact, 180000);
+setInterval(showCopilotFact, 180000); // Every 3 minutes
 </script>
 <script>
+// Lunar Landings (Apollo flags on Moon)
+const moon = scene.getMeshByName("Moon") || scene.getMeshByName("Earth");
+const landingSites = [
+  { name: "Apollo 11", lat: 0.674, lon: 23.472 },
+  { name: "Apollo 12", lat: -3.012, lon: -23.421 },
+  { name: "Apollo 17", lat: 20.1908, lon: 30.7717 }
+];
+
+landingSites.forEach(site => {
+  const latRad = BABYLON.Tools.ToRadians(site.lat);
+  const lonRad = BABYLON.Tools.ToRadians(site.lon);
+  const r = moon.getBoundingInfo().boundingSphere.radius * 1.02;
+  const x = r * Math.cos(latRad) * Math.cos(lonRad);
+  const y = r * Math.sin(latRad);
+  const z = r * Math.cos(latRad) * Math.sin(lonRad);
+
+  const flag = BABYLON.MeshBuilder.CreateBox(site.name, { size: 1 }, scene);
+  const mat = new BABYLON.StandardMaterial(`${site.name}_mat`, scene);
+  mat.emissiveColor = new BABYLON.Color3(1, 0.2, 0.2);
+  flag.material = mat;
+  flag.position.set(x, y, z);
+  flag.parent = moon;
+
+  flag.actionManager = new BABYLON.ActionManager(scene);
+  flag.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+    BABYLON.ActionManager.OnPickTrigger,
+    () => speechSynthesis?.speak(new SpeechSynthesisUtterance(`${site.name} landing site.`))
+  ));
+});
+
+// Surface Maps
+addButton("🗺 Surface Maps", () => {
+  const maps = {
+    Earth: "earth_topo_map.jpg",
+    Mars: "mars_topo_map.jpg",
+    Moon: "moon_map.jpg"
+  };
+  Object.keys(maps).forEach(name => {
+    const p = scene.getMeshByName(name);
+    if (p) {
+      const mat = new BABYLON.StandardMaterial(`${name}_surf`, scene);
+      mat.diffuseTexture = new BABYLON.Texture(maps[name], scene);
+      mat.specularColor = BABYLON.Color3.Black();
+      p.material = mat;
+    }
+  });
+});
+
+// Tour
+const tourSequence = [...planetsData.map(p => p.name), ...stellarSystems.map(s => s.name)];
+let tourIndex = 0;
+
+function startCinematicTour() {
+  if (tourIndex >= tourSequence.length) tourIndex = 0;
+  const name = tourSequence[tourIndex++];
+  const obj = scene.getMeshByName(name);
+  if (!obj) return;
+  followPlanet = null;
+
+  const animTarget = new BABYLON.Animation("tourTarget", "target", 60, BABYLON.Animation.ANIMATIONTYPE_VECTOR3);
+  animTarget.setKeys([{ frame: 0, value: camera.target.clone() }, { frame: 90, value: obj.position.clone() }]);
+
+  const animZoom = new BABYLON.Animation("tourZoom", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+  animZoom.setKeys([{ frame: 0, value: camera.radius }, { frame: 90, value: 100 }]);
+
+  camera.animations = [animTarget, animZoom];
+  scene.beginAnimation(camera, 0, 90, false);
+  speechSynthesis?.speak(new SpeechSynthesisUtterance(`Now approaching ${name}`));
+  setTimeout(startCinematicTour, 7000);
+}
+
+addButton("🎥 Start Tour", startCinematicTour);
+
+// Time-Lapse Recorder
+let isRecording = false;
+const frames = [];
+
+addButton("⏺ Start Recording", () => {
+  isRecording = true;
+  frames.length = 0;
+  speechSynthesis?.speak(new SpeechSynthesisUtterance("Recording started."));
+});
+
+addButton("⏹ Stop & Download", () => {
+  isRecording = false;
+  speechSynthesis?.speak(new SpeechSynthesisUtterance("Exporting frames."));
+  frames.forEach((data, i) => {
+    const a = document.createElement("a");
+    a.href = data;
+    a.download = `frame_${i}.png`;
+    a.click();
+  });
+});
+
+scene.registerAfterRender(() => {
+  if (isRecording) frames.push(canvas.toDataURL("image/png"));
+});
+
+// Meteor Shower
 function triggerMeteorShower() {
   const meteors = [];
   for (let i = 0; i < 40; i++) {
@@ -372,24 +433,16 @@ function triggerMeteorShower() {
     mat.emissiveColor = new BABYLON.Color3(1, 0.5, 0.2);
     mat.alpha = 0.6;
     m.material = mat;
-
-    const start = new BABYLON.Vector3(
-      Math.random() * 800 - 400,
-      150 + Math.random() * 100,
-      Math.random() * 800 - 400
-    );
+    const start = new BABYLON.Vector3(Math.random()*800-400, 150+Math.random()*100, Math.random()*800-400);
     m.position = start;
-
-    const direction = new BABYLON.Vector3(-1, -1.2, 0).normalize().scale(3 + Math.random() * 2);
-    meteors.push({ mesh: m, dir: direction, age: 0 });
+    const dir = new BABYLON.Vector3(-1, -1.2, 0).normalize().scale(3+Math.random()*2);
+    meteors.push({ mesh: m, dir, age: 0 });
   }
-
   scene.registerBeforeRender(() => {
     meteors.forEach(m => {
       if (m.mesh) {
         m.mesh.position.addInPlace(m.dir);
-        m.age++;
-        if (m.age > 100) {
+        if (++m.age > 100) {
           m.mesh.dispose();
           m.mesh = null;
         }
@@ -398,146 +451,84 @@ function triggerMeteorShower() {
   });
 }
 
-// Automatically trigger meteor shower during Perseids week
-const today = new Date();
-if (today.getMonth() === 7 && today.getDate() >= 10 && today.getDate() <= 15) {
+const d = new Date();
+if (d.getMonth() === 7 && d.getDate() >= 10 && d.getDate() <= 15) {
   triggerMeteorShower();
-  if (window.speechSynthesis) {
-    speechSynthesis.speak(new SpeechSynthesisUtterance("Perseid meteor shower active this week."));
-  }
-}
-</script>
-<script>
-function fetchLaunches() {
-  fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=3")
-    .then(res => res.json())
-    .then(data => {
-      const launches = data.results.map(l =>
-        `${l.name} — ${new Date(l.window_start).toLocaleString()}`
-      ).join("\n");
-
-      const launchPanel = new BABYLON.GUI.Rectangle();
-      launchPanel.width = "300px";
-      launchPanel.height = "130px";
-      launchPanel.cornerRadius = 10;
-      launchPanel.color = "white";
-      launchPanel.thickness = 1;
-      launchPanel.background = "rgba(10,10,20,0.85)";
-      launchPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-      launchPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-      launchPanel.top = "20px";
-      launchPanel.left = "20px";
-      gui.addControl(launchPanel);
-
-      const launchBox = new BABYLON.GUI.TextBlock();
-      launchBox.text = "🚀 Upcoming Launches:\n" + launches;
-      launchBox.color = "white";
-      launchBox.fontSize = 14;
-      launchBox.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-      launchBox.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-      launchBox.textWrapping = true;
-      launchBox.paddingTop = 8;
-      launchBox.paddingLeft = 8;
-      launchPanel.addControl(launchBox);
-
-      if (window.speechSynthesis) {
-        const msg = new SpeechSynthesisUtterance("Upcoming launches displayed at top left.");
-        msg.lang = "en-US";
-        speechSynthesis.speak(msg);
-      }
-    }).catch(err => {
-      console.warn("Launch API failed:", err);
-    });
+  speechSynthesis?.speak(new SpeechSynthesisUtterance("Perseid meteor shower active this week."));
 }
 
-fetchLaunches();
-</script>
-<script>
-const speedHUD = new BABYLON.GUI.TextBlock();
-speedHUD.text = "";
-speedHUD.color = "lightgreen";
-speedHUD.fontSize = 16;
-speedHUD.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-speedHUD.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
-speedHUD.top = "50px";
-gui.addControl(speedHUD);
+// Zoom In / Out buttons + hotkeys
+addButton("🔍 Zoom In [X]", () => camera.radius *= 0.7);
+addButton("🔎 Zoom Out [Z]", () => camera.radius *= 1.5);
+
+window.addEventListener("keydown", e => {
+  const key = e.key.toLowerCase();
+  if (key === "x") camera.radius *= 0.7;
+  if (key === "z") camera.radius *= 1.5;
+});
+
+// Time Controls
+addButton("⏯ Pause", () => timeFactor = 0);
+addButton("⏩ Time x2", () => timeFactor = 2);
+addButton("⏩ Time x10", () => timeFactor = 10);
+addButton("⏩ Time x100", () => timeFactor = 100);
+
+// Target Tracker
+const targetLabel = new BABYLON.GUI.TextBlock();
+targetLabel.text = "";
+targetLabel.color = "aqua";
+targetLabel.fontSize = 16;
+targetLabel.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+targetLabel.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+targetLabel.top = "-30px";
+gui.addControl(targetLabel);
 
 scene.registerBeforeRender(() => {
-  const speed = Math.abs(timeFactor);
-  if (speed >= 1000) {
-    const dilation = 1 / Math.sqrt(1 - Math.pow(speed / 299792, 2));
-    speedHUD.text = `⏳ Time Dilation: 1s here ≈ ${dilation.toFixed(2)}s on Earth`;
-  } else {
-    speedHUD.text = "";
-  }
-});
-</script>
-<script>
-// Keep camera locked on focused object
-scene.onBeforeRenderObservable.add(() => {
-  if (followPlanet && followPlanet.position) {
-    camera.setTarget(followPlanet.position.clone());
-  }
+  targetLabel.text = followPlanet?.name ? `🎯 Target: ${followPlanet.name}` : "";
 });
 
-// GUI menu to select and zoom to a planet
-const planetPanel = new BABYLON.GUI.StackPanel();
-planetPanel.isVisible = false;
-gui.addControl(planetPanel);
+// Help overlay [?] and debug toggle
+const helpOverlay = new BABYLON.GUI.Rectangle();
+helpOverlay.width = "500px";
+helpOverlay.height = "200px";
+helpOverlay.cornerRadius = 10;
+helpOverlay.color = "white";
+helpOverlay.background = "rgba(0,0,0,0.9)";
+helpOverlay.thickness = 2;
+helpOverlay.isVisible = false;
+helpOverlay.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+helpOverlay.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+gui.addControl(helpOverlay);
 
-addButton("🔭 Select Planet", () => {
-  planetPanel.clearControls();
-  planetsData.forEach(p => {
-    const btn = BABYLON.GUI.Button.CreateSimpleButton(`btn_${p.name}`, p.name);
-    btn.height = "30px";
-    btn.color = "lightblue";
-    btn.background = "rgba(30,30,30,0.7)";
-    btn.onPointerClickObservable.add(() => {
-      const obj = scene.getMeshByName(p.name);
-      if (!obj) return;
+const helpText = new BABYLON.GUI.TextBlock();
+helpText.text = `🕹 Controls:
+W/A/S/D – Move • Mouse – Orbit
+Z – Zoom out • X – Zoom in
+? – Toggle help • Shift+D – Debug`;
+helpText.color = "#A0E0FF";
+helpText.fontSize = 16;
+helpText.textWrapping = true;
+helpOverlay.addControl(helpText);
 
-      followPlanet = obj;
-
-      const animTarget = new BABYLON.Animation("focusTarget", "target", 60, BABYLON.Animation.ANIMATIONTYPE_VECTOR3);
-      animTarget.setKeys([
-        { frame: 0, value: camera.target.clone() },
-        { frame: 90, value: obj.position.clone() }
-      ]);
-
-      const animZoom = new BABYLON.Animation("focusZoom", "radius", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
-      animZoom.setKeys([
-        { frame: 0, value: camera.radius },
-        { frame: 90, value: 60 }
-      ]);
-
-      camera.animations = [animTarget, animZoom];
-      scene.beginAnimation(camera, 0, 90, false);
-    });
-    planetPanel.addControl(btn);
-  });
-
-  planetPanel.isVisible = !planetPanel.isVisible;
-});
-
-// Keyboard shortcut: Z to zoom out
 window.addEventListener("keydown", e => {
-  if (e.key.toLowerCase() === "z") {
-    camera.radius *= 1.5;
-    followPlanet = null;
+  if (e.key === "?") helpOverlay.isVisible = !helpOverlay.isVisible;
+  if (e.shiftKey && e.key.toLowerCase() === "d") {
+    scene.debugLayer.isVisible() ? scene.debugLayer.hide() : scene.debugLayer.show();
   }
 });
-</script>
-<script>
-engine.runRenderLoop(() => {
-  scene.render();
-});
 
-window.addEventListener("resize", () => {
-  engine.resize();
-});
-</script>
-<script>
+// Save/restore camera
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem("cameraTarget", JSON.stringify(camera.target));
+  localStorage.setItem("cameraRadius", camera.radius);
+// Restore camera from localStorage
 window.addEventListener("DOMContentLoaded", () => {
+  const target = localStorage.getItem("cameraTarget");
+  const radius = localStorage.getItem("cameraRadius");
+  if (target) camera.setTarget(BABYLON.Vector3.FromArray(JSON.parse(target)));
+  if (radius) camera.radius = parseFloat(radius);
+
+  // Splash screen fade
   setTimeout(() => {
     const splash = document.getElementById("splash-screen");
     if (splash) {
@@ -547,8 +538,12 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 });
-</script>
-<script>
+
+// Render loop
+engine.runRenderLoop(() => scene.render());
+window.addEventListener("resize", () => engine.resize());
+
+// Service worker (optional)
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js")
     .then(() => console.log("✅ Service Worker registered"))
