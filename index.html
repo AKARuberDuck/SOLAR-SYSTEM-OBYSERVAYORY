@@ -389,7 +389,7 @@ function showCopilotFact() {
 // Trigger tooltip every few minutes
 setInterval(showCopilotFact, 180000);
 </script>
-  <script>
+<script>
 const speedHUD = new BABYLON.GUI.TextBlock();
 speedHUD.text = "";
 speedHUD.color = "lightgreen";
@@ -522,3 +522,34 @@ scene.registerAfterRender(() => {
   }
 });
 </script>
+<script>
+engine.runRenderLoop(() => {
+  // Smooth camera movement with keys (already handled earlier)
+  scene.render();
+});
+
+window.addEventListener("resize", () => {
+  engine.resize();
+});
+</script>
+<script>
+window.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    const splash = document.getElementById("splash-screen");
+    if (splash) {
+      splash.style.transition = "opacity 1s ease";
+      splash.style.opacity = 0;
+      setTimeout(() => splash.remove(), 1000);
+    }
+  }, 1000);
+});
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("✅ Service Worker registered"))
+    .catch(err => console.warn("Service Worker failed:", err));
+}
+</script>
+</body>
+</html>
