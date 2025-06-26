@@ -4,25 +4,19 @@
   <meta charset="UTF-8" />
   <title>Solar System Observatory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="favicon.ico" />
   <meta name="theme-color" content="#000000" />
 
   <style>
-    html, body { margin: 0; overflow: hidden; height: 100%; background: black; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: black; }
     #renderCanvas { width: 100%; height: 100%; display: block; }
     #splash-screen {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background-color: black;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: black; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
     }
     #splash-screen img {
       max-width: 80%;
-      opacity: 0.85;
+      opacity: 0.8;
     }
   </style>
 
@@ -43,15 +37,17 @@ let scene = new BABYLON.Scene(engine);
 const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.3, 300, BABYLON.Vector3.Zero(), scene);
 camera.attachControl(canvas, true);
 camera.lowerRadiusLimit = 30;
-camera.upperRadiusLimit = 12000;
+camera.upperRadiusLimit = 10000;
 
 const light = new BABYLON.PointLight("sunLight", BABYLON.Vector3.Zero(), scene);
 light.intensity = 2.4;
 
 new BABYLON.GlowLayer("glow", scene);
-new BABYLON.Layer("backgroundStars", "8k_stars_milky_way.jpg", scene, true);
+new BABYLON.Layer("bg", "8k_stars_milky_way.jpg", scene, true);
 
 let timeFactor = 1;
+let inPeriodicMode = false;
+let periodicScene = null;
 </script>
 <script>
 const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
@@ -61,9 +57,9 @@ panel.width = "260px";
 panel.background = "rgba(20,20,20,0.85)";
 panel.cornerRadius = 8;
 panel.thickness = 0;
+panel.left = "10px"; panel.top = "10px";
 panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
 panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-panel.left = "10px"; panel.top = "10px";
 gui.addControl(panel);
 
 const stack = new BABYLON.GUI.StackPanel();
@@ -81,38 +77,65 @@ function addButton(label, callback) {
 }
 </script>
 <script>
-function createPlanet({ name, size, color, distance, speed, atmosphere, terrain, clouds }) {
-  const sphere = BABYLON.MeshBuilder.CreateSphere(name, { diameter: size, segments: 32 }, scene);
-  const mat = new BABYLON.StandardMaterial(`${name}_mat`, scene);
-  mat.diffuseColor = color;
+const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 32 }, scene);
+const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
+sunMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.1);
+sun.material = sunMat;
 
-  if (terrain) {
-    mat.diffuseTexture = new BABYLON.Texture("https://planetpixelemporium.com/images/marscolor.jpg", scene);
-    mat.bumpTexture = new BABYLON.Texture("https://planetpixelemporium.com/images/marsbump.jpg", scene);
-    mat.specularColor = BABYLON.Color3.Black();
+const solarWind = new BABYLON.ParticleSystem("solarWind", 1000, scene);
+solarWind.particleTexture = new BABYLON.Texture("https://assets.babylonjs.com/textures/flare.png", scene);
+solarWind.emitter = sun;
+solarWind.minEmitBox = BABYLON.Vector3.Zero();
+solarWind.maxEmitBox = BABYLON.Vector3.Zero();
+solarWind.color1 = new BABYLON.Color4(1, 0.8, 0.5, 1);
+solarWind.color2 = new BABYLON.Color4(1, 0.5, 0.2, 1);
+solarWind.emitRate = 200;
+solarWind.direction1 = new BABYLON.Vector3(-1, 0.2, -1);
+solarWind.direction2 = new BABYLON.Vector3(1, -0.2, 1);
+solarWind.start();
+
+setInterval(() => {
+  const flare = BABYLON.MeshBuilder.CreateTorus("flare", { diameter: 38, thickness: 0.5, arc: 0.3 }, scene);
+  const fmat = new BABYLON.StandardMaterial("flareMat", scene);
+  fmat.emissiveColor = new BABYLON.Color3(1, 0.6, 0.1);
+  flare.material = fmat;
+  flare.rotation.x = Math.PI / 2;
+  flare.rotation.y = Math.random() * Math.PI * 2;
+  flare.parent = sun;
+  setTimeout(() => flare.dispose(), 1500);
+}, 15000);
+</script>
+<script>
+function createPlanet({ name, size, distance, speed, hasAtmosphere, hasClouds, hasTerrain }) {
+  const mesh = BABYLON.MeshBuilder.CreateSphere(name, { diameter: size }, scene);
+  const mat = new BABYLON.StandardMaterial(name + "_mat", scene);
+  mat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+  mesh.material = mat;
+
+  if (hasTerrain) {
+    mat.diffuseTexture = new BABYLON.Texture("marscolor.jpg", scene);
+    mat.bumpTexture = new BABYLON.Texture("marsbump.jpg", scene);
   }
 
-  sphere.material = mat;
-
-  if (atmosphere) {
-    const atm = BABYLON.MeshBuilder.CreateSphere(`${name}_atm`, { diameter: size * 1.03 }, scene);
-    const atmMat = new BABYLON.StandardMaterial(`${name}_atmMat`, scene);
+  if (hasAtmosphere) {
+    const atm = BABYLON.MeshBuilder.CreateSphere(name + "_atm", { diameter: size * 1.03 }, scene);
+    const atmMat = new BABYLON.StandardMaterial(name + "_atmMat", scene);
     atmMat.emissiveColor = new BABYLON.Color3(0.2, 0.5, 1);
     atmMat.alpha = 0.2;
     atm.material = atmMat;
-    atm.parent = sphere;
+    atm.parent = mesh;
   }
 
-  if (clouds) {
-    const cloud = BABYLON.MeshBuilder.CreateSphere(`${name}_clouds`, { diameter: size * 1.01, segments: 32 }, scene);
-    const cloudMat = new BABYLON.StandardMaterial(`${name}_cloudMat`, scene);
-    cloudMat.diffuseTexture = new BABYLON.Texture("https://planetpixelemporium.com/images/clouds_512.png", scene);
+  if (hasClouds) {
+    const cloud = BABYLON.MeshBuilder.CreateSphere(name + "_clouds", { diameter: size * 1.01 }, scene);
+    const cloudMat = new BABYLON.StandardMaterial(name + "_cloudMat", scene);
+    cloudMat.diffuseTexture = new BABYLON.Texture("earth_clouds_alpha.png", scene);
     cloudMat.opacityTexture = cloudMat.diffuseTexture;
     cloudMat.emissiveColor = BABYLON.Color3.White();
-    cloudMat.alpha = 0.8;
+    cloudMat.alpha = 0.6;
     cloudMat.backFaceCulling = false;
     cloud.material = cloudMat;
-    cloud.parent = sphere;
+    cloud.parent = mesh;
 
     scene.registerBeforeRender(() => {
       cloud.rotation.y += 0.0005 * timeFactor;
@@ -121,210 +144,49 @@ function createPlanet({ name, size, color, distance, speed, atmosphere, terrain,
 
   scene.registerBeforeRender(() => {
     const t = performance.now() * 0.00001 * speed * timeFactor;
-    sphere.position.x = Math.cos(t) * distance;
-    sphere.position.z = Math.sin(t) * distance;
+    mesh.position.x = Math.cos(t) * distance;
+    mesh.position.z = Math.sin(t) * distance;
   });
 
-  return sphere;
+  return mesh;
 }
 
-// Instantiate Earth and Mars
 createPlanet({
   name: "Earth",
   size: 6,
-  color: new BABYLON.Color3(0.4, 0.6, 1),
   distance: 160,
   speed: 2.98,
-  atmosphere: true,
-  terrain: false,
-  clouds: true
+  hasAtmosphere: true,
+  hasClouds: true,
+  hasTerrain: false
 });
 
 createPlanet({
   name: "Mars",
   size: 5,
-  color: new BABYLON.Color3(1, 0.4, 0.3),
   distance: 210,
   speed: 2.4,
-  atmosphere: true,
-  terrain: true,
-  clouds: false
+  hasAtmosphere: true,
+  hasClouds: false,
+  hasTerrain: true
 });
 </script>
 <script>
-// 🌞 Sun Mesh
-const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 32 }, scene);
-const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
-sunMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.1);
-sun.material = sunMat;
-sun.position = BABYLON.Vector3.Zero();
+const slider = new BABYLON.GUI.Slider();
+slider.minimum = -100;
+slider.maximum = 100;
+slider.value = 1;
+slider.height = "20px";
+slider.width = "150px";
+slider.color = "orange";
+slider.background = "gray";
+slider.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+slider.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+slider.top = "20px";
+gui.addControl(slider);
 
-// 🔥 Solar Wind Particle System
-const solarWind = new BABYLON.ParticleSystem("solarWind", 1000, scene);
-solarWind.particleTexture = new BABYLON.Texture("https://assets.babylonjs.com/textures/flare.png", scene);
-solarWind.emitter = sun;
-solarWind.minEmitBox = BABYLON.Vector3.Zero();
-solarWind.maxEmitBox = BABYLON.Vector3.Zero();
-solarWind.color1 = new BABYLON.Color4(1, 0.9, 0.6, 1);
-solarWind.color2 = new BABYLON.Color4(1, 0.5, 0.2, 1);
-solarWind.minSize = 0.3;
-solarWind.maxSize = 0.8;
-solarWind.emitRate = 200;
-solarWind.direction1 = new BABYLON.Vector3(-1, 0.3, -1);
-solarWind.direction2 = new BABYLON.Vector3(1, -0.3, 1);
-solarWind.minLifeTime = 2;
-solarWind.maxLifeTime = 3;
-solarWind.gravity = BABYLON.Vector3.Zero();
-solarWind.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-solarWind.start();
-
-// ⚡ Flare Bursts (Torus)
-setInterval(() => {
-  const flare = BABYLON.MeshBuilder.CreateTorus("solarFlare", {
-    diameter: 38,
-    thickness: 0.5,
-    tessellation: 48,
-    arc: 0.35
-  }, scene);
-
-  const flareMat = new BABYLON.StandardMaterial("flareMat", scene);
-  flareMat.emissiveColor = new BABYLON.Color3(1, 0.5, 0);
-  flare.material = flareMat;
-
-  flare.rotation.x = Math.PI / 2;
-  flare.rotation.y = Math.random() * Math.PI * 2;
-  flare.parent = sun;
-
-  setTimeout(() => flare.dispose(), 1800);
-}, 15000);
-</script>
-<script>
-const iss = BABYLON.MeshBuilder.CreateSphere("ISS", { diameter: 1.5 }, scene);
-const issMat = new BABYLON.StandardMaterial("issMat", scene);
-issMat.emissiveColor = new BABYLON.Color3(0.7, 1, 1);
-iss.material = issMat;
-
-function updateISS() {
-  fetch("https://api.wheretheiss.at/v1/satellites/25544")
-    .then(res => res.json())
-    .then(data => {
-      const radius = 160; // Earth's orbital distance
-      const lat = BABYLON.Tools.ToRadians(data.latitude);
-      const lon = BABYLON.Tools.ToRadians(data.longitude);
-      iss.position.x = Math.cos(lat) * Math.cos(lon) * radius;
-      iss.position.z = Math.cos(lat) * Math.sin(lon) * radius;
-      iss.position.y = Math.sin(lat) * radius;
-    })
-    .catch(err => console.warn("ISS fetch failed:", err));
-}
-
-setInterval(updateISS, 5000);
-</script>
-<script>
-let eclipseActive = false;
-let eclipseOverlay;
-
-addButton("☀️ Toggle Eclipses", () => {
-  if (!eclipseOverlay) {
-    eclipseOverlay = BABYLON.MeshBuilder.CreateDisc("eclipseShadow", { radius: 10 }, scene);
-    eclipseOverlay.position = new BABYLON.Vector3(0, 0.1, -160); // Overlay Earth approx
-    const mat = new BABYLON.StandardMaterial("eclipseMat", scene);
-    mat.diffuseColor = new BABYLON.Color3(0, 0, 0);
-    mat.alpha = 0.5;
-    eclipseOverlay.material = mat;
-    eclipseOverlay.isVisible = false;
-  }
-  eclipseActive = !eclipseActive;
-  eclipseOverlay.isVisible = eclipseActive;
-});
-</script>
-<script>
-// Meteor trail bursts every 30 seconds
-setInterval(() => {
-  const system = new BABYLON.ParticleSystem("meteor", 200, scene);
-  system.particleTexture = new BABYLON.Texture("https://assets.babylonjs.com/textures/flare.png", scene);
-  system.emitter = new BABYLON.Vector3(0, 300, 0);
-  system.minEmitBox = new BABYLON.Vector3(-200, 0, -200);
-  system.maxEmitBox = new BABYLON.Vector3(200, 0, 200);
-  system.direction1 = new BABYLON.Vector3(0, -1, 0);
-  system.direction2 = new BABYLON.Vector3(0.2, -1, 0.2);
-  system.emitRate = 400;
-  system.minLifeTime = 0.6;
-  system.maxLifeTime = 1;
-  system.minSize = 0.4;
-  system.maxSize = 0.8;
-  system.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-  system.color1 = new BABYLON.Color4(1, 0.8, 0.5, 1);
-  system.gravity = new BABYLON.Vector3(0, -9.8, 0);
-  system.targetStopDuration = 0.8;
-  system.start();
-}, 30000);
-
-// Lagrange Point Orbs
-let lagrangeShown = false;
-const lagrangePoints = [];
-
-["L1", "L2", "L3", "L4", "L5"].forEach((label, i) => {
-  const orb = BABYLON.MeshBuilder.CreateSphere(label, { diameter: 1.2 }, scene);
-  orb.material = new BABYLON.StandardMaterial(label + "_mat", scene);
-  orb.material.emissiveColor = new BABYLON.Color3(0.6, 0.9, 1);
-  orb.position = new BABYLON.Vector3(160 + (i * 20) * (i % 2 === 0 ? 1 : -1), 0, -30 + i * 10);
-  orb.setEnabled(false);
-  lagrangePoints.push(orb);
-});
-
-addButton("⚖️ Lagrange Points", () => {
-  lagrangeShown = !lagrangeShown;
-  lagrangePoints.forEach(p => p.setEnabled(lagrangeShown));
-});
-</script>
-<script>
-let musicOn = false;
-let music;
-
-addButton("🎧 Toggle Music", () => {
-  if (!music) {
-    music = new Audio("https://cdn.pixabay.com/audio/2022/03/29/audio_a7cbe0ac5c.mp3");
-    music.loop = true;
-    music.volume = 0.3;
-  }
-  if (musicOn) {
-    music.pause();
-  } else {
-    music.play();
-  }
-  musicOn = !musicOn;
-});
-</script>
-<script>
-// Scene transition
-let periodicScene = null;
-let inPeriodicMode = false;
-
-addButton("🧪 Periodic Table", () => {
-  inPeriodicMode = true;
-  periodicScene = new BABYLON.Scene(engine);
-
-  const cam = new BABYLON.ArcRotateCamera("cam", Math.PI / 2, Math.PI / 2.3, 50, BABYLON.Vector3.Zero(), periodicScene);
-  cam.attachControl(canvas, true);
-
-  const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), periodicScene);
-  periodicScene.clearColor = new BABYLON.Color3(0, 0, 0);
-
-  const table = [];
-  for (let i = 0; i < 118; i++) {
-    const tile = BABYLON.MeshBuilder.CreateBox("E" + (i + 1), { size: 2 }, periodicScene);
-    const mat = new BABYLON.StandardMaterial("mat" + i, periodicScene);
-    mat.emissiveColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
-    tile.material = mat;
-    tile.position.x = (i % 18) * 2.5 - 20;
-    tile.position.y = Math.floor(i / 18) * -2.5 + 10;
-    table.push(tile);
-  }
-
-  addButton("🚀 Back to Solar System", () => {
-    inPeriodicMode = false;
-  });
+slider.onValueChangedObservable.add(val => {
+  timeFactor = val;
 });
 </script>
 <script>
@@ -360,7 +222,7 @@ window.addEventListener("resize", () => engine.resize());
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js")
     .then(() => console.log("✅ Service Worker registered"))
-    .catch(err => console.warn("SW Error:", err));
+    .catch(err => console.warn("SW error", err));
 });
 </script>
 </body>
