@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Solar System Observatory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" />
     <script src="sw.js"></script> <!-- if used -->
   <meta name="theme-color" content="#000000" />
@@ -33,3 +34,332 @@
   <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
   <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 </head>
+<body>
+  <div id="splash-screen">
+    <img src="splash-loading-screen.png" alt="Loading..." />
+  </div>
+  <canvas id="renderCanvas"></canvas>
+<script>
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
+const scene = new BABYLON.Scene(engine);
+scene.clearColor = BABYLON.Color3.Black();
+
+const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.3, 300, BABYLON.Vector3.Zero(), scene);
+camera.attachControl(canvas, true);
+camera.lowerRadiusLimit = 30;
+camera.upperRadiusLimit = 12000;
+camera.inputs.addKeyboard();
+
+const light = new BABYLON.PointLight("sunLight", BABYLON.Vector3.Zero(), scene);
+light.intensity = 2.4;
+
+new BABYLON.Layer("starfield", "8k_stars_milky_way.jpg", scene, true);
+new BABYLON.GlowLayer("glow", scene);
+
+let timeFactor = 1;
+let followPlanet = null;
+</script>
+<script>
+const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+
+const panel = new BABYLON.GUI.Rectangle("controlPanel");
+panel.width = "260px";
+panel.background = "rgba(20,20,20,0.85)";
+panel.cornerRadius = 8;
+panel.thickness = 0;
+panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+panel.left = "10px";
+panel.top = "10px";
+gui.addControl(panel);
+
+const stack = new BABYLON.GUI.StackPanel();
+stack.paddingTop = "10px";
+panel.addControl(stack);
+
+function addButton(label, callback) {
+  const btn = BABYLON.GUI.Button.CreateSimpleButton("btn_" + label, label);
+  btn.height = "30px";
+  btn.width = "95%";
+  btn.color = "lightgreen";
+  btn.background = "transparent";
+  btn.paddingTop = "5px";
+  btn.paddingBottom = "5px";
+  btn.onPointerClickObservable.add(callback);
+  stack.addControl(btn);
+}
+</script>
+<script>
+function createPlanet({ name, size, color, distance, speed, atmosphere, terrain, clouds }) {
+  const sphere = BABYLON.MeshBuilder.CreateSphere(name, { diameter: size, segments: 32 }, scene);
+  const mat = new BABYLON.StandardMaterial(`${name}_mat`, scene);
+  mat.diffuseColor = color;
+  sphere.material = mat;
+
+  if (terrain) {
+    mat.diffuseTexture = new BABYLON.Texture(`${name.toLowerCase()}_map.jpg`, scene);
+    mat.bumpTexture = new BABYLON.Texture(`${name.toLowerCase()}_bump.jpg`, scene);
+    mat.specularColor = BABYLON.Color3.Black();
+  }
+
+  if (atmosphere) {
+    const atm = BABYLON.MeshBuilder.CreateSphere(`${name}_atm`, { diameter: size * 1.03 }, scene);
+    const atmMat = new BABYLON.StandardMaterial(`${name}_atmMat`, scene);
+    atmMat.emissiveColor = new BABYLON.Color3(0.1, 0.3, 1);
+    atmMat.alpha = 0.2;
+    atm.material = atmMat;
+    atm.parent = sphere;
+  }
+
+  if (clouds) {
+    const cloud = BABYLON.MeshBuilder.CreateSphere(`${name}_clouds`, { diameter: size * 1.01 }, scene);
+    const cloudMat = new BABYLON.StandardMaterial(`${name}_cloudMat`, scene);
+    cloudMat.diffuseTexture = new BABYLON.Texture("earth_clouds_alpha.png", scene);
+    cloudMat.opacityTexture = cloudMat.diffuseTexture;
+    cloudMat.emissiveColor = BABYLON.Color3.White();
+    cloudMat.alpha = 0.8;
+    cloudMat.backFaceCulling = false;
+    cloud.material = cloudMat;
+    cloud.parent = sphere;
+
+    scene.registerBeforeRender(() => {
+      cloud.rotation.y += 0.0005 * timeFactor;
+    });
+  }
+
+  scene.registerBeforeRender(() => {
+    const t = performance.now() * 0.00001 * speed * timeFactor;
+    sphere.position.x = Math.cos(t) * distance;
+    sphere.position.z = Math.sin(t) * distance;
+  });
+
+  return sphere;
+}
+
+const earth = createPlanet({
+  name: "Earth",
+  size: 6,
+  color: new BABYLON.Color3(0.4, 0.6, 1),
+  distance: 160,
+  speed: 2.98,
+  atmosphere: true,
+  terrain: false,
+  clouds: true
+});
+
+const mars = createPlanet({
+  name: "Mars",
+  size: 5,
+  color: new BABYLON.Color3(1, 0.4, 0.3),
+  distance: 210,
+  speed: 2.4,
+  atmosphere: true,
+  terrain: true,
+  clouds: false
+});
+</script>
+<script>
+// Create the Sun
+const sun = BABYLON.MeshBuilder.CreateSphere("Sun", { diameter: 32 }, scene);
+const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
+sunMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0.1);
+sun.material = sunMat;
+sun.position = BABYLON.Vector3.Zero();
+
+// Solar wind: radial particle burst
+const solarWind = new BABYLON.ParticleSystem("solarWind", 1000, scene);
+solarWind.particleTexture = new BABYLON.Texture("flare.png", scene);
+solarWind.emitter = sun;
+solarWind.minEmitBox = solarWind.maxEmitBox = BABYLON.Vector3.Zero();
+solarWind.color1 = new BABYLON.Color4(1, 1, 1, 1);
+solarWind.color2 = new BABYLON.Color4(1, 0.7, 0, 1);
+solarWind.emitRate = 250;
+solarWind.minSize = 0.3;
+solarWind.maxSize = 0.7;
+solarWind.minLifeTime = 2;
+solarWind.maxLifeTime = 3;
+solarWind.direction1 = new BABYLON.Vector3(-1, 0.2, -1);
+solarWind.direction2 = new BABYLON.Vector3(1, -0.2, 1);
+solarWind.gravity = BABYLON.Vector3.Zero();
+solarWind.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+solarWind.start();
+
+// Random flare arcs
+setInterval(() => {
+  const flare = BABYLON.MeshBuilder.CreateTorus("flareArc", {
+    diameter: 34,
+    thickness: 0.5,
+    tessellation: 48,
+    arc: 0.4
+  }, scene);
+
+  const flareMat = new BABYLON.StandardMaterial("flareMat", scene);
+  flareMat.emissiveColor = new BABYLON.Color3(1, 0.4, 0.1);
+  flare.material = flareMat;
+  flare.parent = sun;
+  flare.rotation.x = Math.PI / 2;
+  flare.rotation.y = Math.random() * Math.PI * 2;
+
+  setTimeout(() => flare.dispose(), 1500);
+}, 16000);
+</script>
+<script>
+const iss = BABYLON.MeshBuilder.CreateSphere("ISS", { diameter: 1.5 }, scene);
+const issMat = new BABYLON.StandardMaterial("issMat", scene);
+issMat.emissiveColor = new BABYLON.Color3(0.7, 1, 1);
+iss.material = issMat;
+
+function updateISS() {
+  fetch("https://api.wheretheiss.at/v1/satellites/25544")
+    .then(res => res.json())
+    .then(data => {
+      const radius = 160;
+      const lat = BABYLON.Tools.ToRadians(data.latitude);
+      const lon = BABYLON.Tools.ToRadians(data.longitude);
+      iss.position.x = Math.cos(lat) * Math.cos(lon) * radius;
+      iss.position.z = Math.cos(lat) * Math.sin(lon) * radius;
+      iss.position.y = Math.sin(lat) * radius;
+    })
+    .catch(err => console.warn("ISS fetch failed:", err));
+}
+
+setInterval(updateISS, 5000);
+</script>
+<script>
+const slider = new BABYLON.GUI.Slider();
+slider.minimum = -100;
+slider.maximum = 100;
+slider.value = 1;
+slider.height = "20px";
+slider.width = "160px";
+slider.color = "orange";
+slider.background = "gray";
+slider.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+slider.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+slider.top = "20px";
+gui.addControl(slider);
+
+slider.onValueChangedObservable.add(val => {
+  timeFactor = val;
+});
+</script>
+<script>
+const constellations = [];
+
+const line = BABYLON.MeshBuilder.CreateLines("orion", {
+  points: [
+    new BABYLON.Vector3(400, 100, 300),
+    new BABYLON.Vector3(410, 90, 310),
+    new BABYLON.Vector3(420, 80, 300)
+  ]
+}, scene);
+line.color = new BABYLON.Color3(1, 1, 1);
+line.isVisible = false;
+constellations.push(line);
+
+addButton("🌌 Toggle Constellations", () => {
+  constellations.forEach(c => (c.isVisible = !c.isVisible));
+});
+</script>
+<script>
+const gravityWell = BABYLON.MeshBuilder.CreateGround("gravityWell", {
+  width: 300,
+  height: 300,
+  subdivisions: 80
+}, scene);
+gravityWell.position.y = -20;
+const wellMat = new BABYLON.StandardMaterial("gravityMat", scene);
+wellMat.wireframe = true;
+wellMat.emissiveColor = new BABYLON.Color3(0.3, 0.8, 1);
+gravityWell.material = wellMat;
+
+const pos = gravityWell.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+for (let i = 0; i < pos.length; i += 3) {
+  const x = pos[i], z = pos[i + 2];
+  const dist = Math.sqrt(x * x + z * z);
+  pos[i + 1] = -12 / (1 + dist * 0.08);
+}
+gravityWell.updateVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
+</script>
+<script>
+function annotatePlanet(name, content) {
+  const box = new BABYLON.GUI.Rectangle("anno_" + name);
+  box.width = "220px";
+  box.height = "auto";
+  box.cornerRadius = 8;
+  box.background = "rgba(0,0,0,0.8)";
+  box.color = "white";
+  box.thickness = 1;
+  box.paddingTop = "5px";
+  box.paddingBottom = "5px";
+  box.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+  box.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+  box.top = "-10px";
+  box.left = "-20px";
+
+  const text = new BABYLON.GUI.TextBlock();
+  text.text = content;
+  text.color = "lightblue";
+  text.fontSize = 14;
+  text.textWrapping = true;
+  box.addControl(text);
+
+  gui.addControl(box);
+
+  scene.registerBeforeRender(() => {
+    const mesh = scene.getMeshByName(name);
+    if (mesh) {
+      const projected = BABYLON.Vector3.Project(
+        mesh.position,
+        BABYLON.Matrix.Identity(),
+        scene.getTransformMatrix(),
+        camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+      );
+      box.left = (projected.x - engine.getRenderWidth() / 2) + "px";
+      box.top = (projected.y - engine.getRenderHeight() / 2) + "px";
+    }
+  });
+}
+
+annotatePlanet("Mars", "🪐 Mars\n• Avg Temp: -63°C\n• 2 Moons\n• Olympus Mons\n• Tilt: 25°");
+annotatePlanet("Earth", "🌍 Earth\n• Avg Temp: 15°C\n• 1 Moon\n• Tilt: 23.5°\n• Habitable");
+</script>
+  <script>
+window.addEventListener("DOMContentLoaded", () => {
+  const t = localStorage.getItem("cameraTarget");
+  const r = localStorage.getItem("cameraRadius");
+  if (t) camera.setTarget(BABYLON.Vector3.FromArray(JSON.parse(t)));
+  if (r) camera.radius = parseFloat(r);
+
+  const splash = document.getElementById("splash-screen");
+  if (splash) {
+    splash.style.transition = "opacity 1s ease";
+    splash.style.opacity = 0;
+    setTimeout(() => splash.remove(), 1000);
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem("cameraTarget", JSON.stringify(camera.target));
+  localStorage.setItem("cameraRadius", camera.radius);
+});
+</script>
+<script>
+engine.runRenderLoop(() => {
+  scene.render();
+});
+
+window.addEventListener("resize", () => {
+  engine.resize();
+});
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("✅ Service Worker registered"))
+    .catch(err => console.warn("Service Worker error:", err));
+}
+</script>
+</body>
+</html>
